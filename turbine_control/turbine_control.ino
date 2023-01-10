@@ -15,9 +15,18 @@ OrientationPID* orientationPID = NULL;
 OrientationStepper* orientationStepper = NULL;
 
 
+
 const byte rxPin = 2;
 const byte txPin = 3;
 SoftwareSerial espSerial(rxPin, txPin);
+//1.5e^{-0.0001\left(x-windDir\right)^{2}}
+
+const int rotation = 0;
+const int windDir = 180;
+
+double fakeVoltage() {
+  1.5*exp(-0.0001*pow((rotation - windDir), 2));
+}
 
 void setup() {
   analogReference(EXTERNAL);
@@ -32,7 +41,7 @@ void setup() {
 void loop() {
   unsigned long now = millis();
 
-  //every 2s send an initialization request or turbine metrics to ESP8266
+  //every 2s send an initialization request or send turbine metrics to ESP8266
   if (now - lastMsg > 2000) {
       lastMsg = now;
 
@@ -50,6 +59,7 @@ void loop() {
     }
   }
 
+  //If settings are recieved from ESP8266 deserialize them
   if (espSerial.available()) {
     char buffer[100] = "";
     espSerial.readBytesUntil('\n', buffer, 100);
@@ -63,15 +73,15 @@ void loop() {
       Serial.println(bufferCopy);
     } else {
       if (doc["type"] == "SETTINGS") {
-        Serial.println("GOT HERE");
         int kp = doc["kp"];
         int ki = doc["ki"];
         int kd = doc["kd"];
         int state = doc["stepperState"];
 
         if (orientationStepper == NULL) {
-          orientationPID = new OrientationPID(0, 0, 0, kp, ki, kd);
+          orientationPID = new OrientationPID(1.5, fakeVoltage(), kp, ki, kd);
           orientationStepper = new OrientationStepper(&myStepper, orientationPID);
+          orientationStepper->setState(state);
           Serial.println("INITIALIZED");
         } else {
           orientationPID->setConstants(kp, ki, kd);

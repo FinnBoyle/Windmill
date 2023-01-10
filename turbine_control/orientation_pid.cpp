@@ -14,3 +14,8 @@ void OrientationPID::setConstants(int kp, int ki, int kd) {
   m_ki = ki;
   m_kd = kd;
 }
+
+
+int OrientationPID::rotationChange() {
+  
+}
