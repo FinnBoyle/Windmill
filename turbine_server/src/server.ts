@@ -28,11 +28,14 @@ app.get("/metrics", async (request: Request, response: Response) => {
   response.json(Object.values(latestMetrics));
 });
 app.put("/settings", async (request: Request, response: Response) => {
+  console.log(request.body);
   client.publish(
     "SETTINGS_" + request.body.id,
-    `{"stepperState":${parseInt(request.body.stepperState)},"kp": ${
-      request.body.kp
-    },"ki":${request.body.ki},"kd":${request.body.kd}}`
+    `{"stepperState":${parseInt(request.body.stepperState)},"rpm": ${
+      request.body.rpm
+    },"steps":${request.body.steps},"kp": ${request.body.kp},"ki":${
+      request.body.ki
+    },"kd":${request.body.kd}}`
   );
   response.json(request.body);
 });

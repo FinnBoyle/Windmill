@@ -69,13 +69,13 @@ const DashboardForm: React.FC<DashboardFormProps> = (
                 <FormControlLabel
                   value={1}
                   control={<Radio />}
-                  label="CLOCKWISE"
+                  label="CLOCKWISE_AUTO"
                   id="stateClockwise"
                 />
                 <FormControlLabel
                   value={2}
                   control={<Radio />}
-                  label="ANTI_CLOCKWISE"
+                  label="ANTI_CLOCKWISE_AUTO"
                   id="stateAntiClockwise"
                 />
                 <FormControlLabel
@@ -84,17 +84,37 @@ const DashboardForm: React.FC<DashboardFormProps> = (
                   label="PID"
                   id="statePID"
                 />
+                <FormControlLabel
+                  value={4}
+                  control={<Radio />}
+                  label="CLOCKWISE_STEP"
+                  id="stateClockwise"
+                />
+                <FormControlLabel
+                  value={5}
+                  control={<Radio />}
+                  label="ANTI_CLOCKWISE_STEP"
+                  id="stateAntiClockwise"
+                />
               </RadioGroup>
             </FormControl>
           </Grid>
           <Grid item xs={12}>
             <FormControl>
-              <FormLabel>Orientation Stepper Speed</FormLabel>
+              <FormLabel>Stepper Parameters</FormLabel>
               <FormGroup row sx={{ justifyContent: "space-around" }}>
                 <TextField
-                  id="RPM"
+                  id="rpm"
                   label="RPM"
                   variant="outlined"
+                  type="number"
+                  sx={{ mx: 1 }}
+                />
+                <TextField
+                  id="steps"
+                  label="Steps"
+                  variant="outlined"
+                  type="number"
                   sx={{ mx: 1 }}
                 />
               </FormGroup>

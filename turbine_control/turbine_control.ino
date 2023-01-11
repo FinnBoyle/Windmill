@@ -25,7 +25,7 @@ const int rotation = 0;
 const int windDir = 180;
 
 double fakeVoltage() {
-  1.5*exp(-0.0001*pow((rotation - windDir), 2));
+  1.5 * exp(-0.0001 * pow((rotation - windDir), 2));
 }
 
 void setup() {
@@ -43,8 +43,7 @@ void loop() {
 
   //every 2s send an initialization request or send turbine metrics to ESP8266
   if (now - lastMsg > 2000) {
-      lastMsg = now;
-
+    lastMsg = now;
     if (orientationStepper == NULL) {
       DynamicJsonDocument doc(1024);
       doc["type"] = "INIT_REQ";
@@ -77,15 +76,19 @@ void loop() {
         int ki = doc["ki"];
         int kd = doc["kd"];
         int state = doc["stepperState"];
+        int rpm = doc["rpm"];
+        int steps = doc["steps"];
 
         if (orientationStepper == NULL) {
-          orientationPID = new OrientationPID(1.5, fakeVoltage(), kp, ki, kd);
-          orientationStepper = new OrientationStepper(&myStepper, orientationPID);
+          orientationPID = new OrientationPID(1.5, kp, ki, kd);
+          orientationStepper = new OrientationStepper(&myStepper, orientationPID, rpm);
           orientationStepper->setState(state);
           Serial.println("INITIALIZED");
         } else {
           orientationPID->setConstants(kp, ki, kd);
           orientationStepper->setState(state);
+          orientationStepper->setRPM(rpm);
+          orientationStepper->addSteps(steps);
         }
       }
     }

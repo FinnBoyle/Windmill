@@ -5,22 +5,24 @@
 
 // Update these with values suitable for your network.
 
-// const char* ssid = "SCMS_RESEARCH";
-// const char* password = "S0nny@AUT";
-// const char* mqtt_server = "172.16.24.115";
+const char* ssid = "SCMS_RESEARCH";
+const char* password = "S0nny@AUT";
+const char* mqtt_server = "172.16.24.115";
 
-const char* ssid = "2.4ghz";
-const char* password = "computer";
-const char* mqtt_server = "192.168.1.168";
+// const char* ssid = "2.4ghz";
+// const char* password = "computer";
+// const char* mqtt_server = "192.168.1.168";
 
 //temporary settings before file storage implemented
 //Default values
 double dVoltage = 0;
-int dStepperState = 0, dkp = 0, dki = 0, dkd = 0;
+int dStepperState = 0, dRPM= 100, dSteps = 0, dkp = 0, dki = 0, dkd = 0;
 //settings pointers
 const char* ID = "T1";
 double* voltage = &dVoltage;
 int* stepperState = &dStepperState;
+int* rpm = &dRPM;
+int* steps = &dSteps;
 int* kp = &dkp;
 int* ki = &dki;
 int* kd = &dkd;
@@ -68,6 +70,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
     DeserializationError error = deserializeJson(doc, message);
     if (!error) {
       *stepperState = doc["stepperState"];
+      *rpm = doc["rpm"];
+      *steps = doc["steps"];
       *kp = doc["kp"];
       *ki = doc["ki"];
       *kd = doc["kd"];
@@ -120,11 +124,14 @@ void updateControllerSettings() {
   DynamicJsonDocument doc(1024);
   doc["type"] = "SETTINGS";
   doc["stepperState"] = *stepperState;
+  doc["rpm"] = *rpm;
+  doc["steps"] = *steps;
   doc["kp"] = *kp;
   doc["ki"] = *ki;
   doc["kd"] = *kd;
   serializeJson(doc, Serial);
   Serial.write('\n');
+  *steps = 0;
 }
 
 bool saveSettings() {
@@ -136,6 +143,8 @@ bool saveSettings() {
 
   DynamicJsonDocument doc(1024);
   doc["stepperState"] = *stepperState;
+  doc["rpm"] = *rpm;
+  doc["steps"] = *steps;
   doc["kp"] = *kp;
   doc["ki"] = *ki;
   doc["kd"] = *kd;
@@ -167,6 +176,8 @@ bool readSavedSettings() {
   DeserializationError error = deserializeJson(doc, file);
   if (!error) {
     *stepperState = doc["stepperState"];
+    *rpm = doc['rpm'];
+    *steps = doc['steps'];
     *kp = doc["kp"];
     *ki = doc["ki"];
     *kd = doc["kd"];
@@ -194,6 +205,7 @@ void loop() {
         turbineData["id"] = ID;
         turbineData["voltage"] = doc["voltage"];
         turbineData["stepperState"] = *stepperState;
+        turbineData["rpm"] = *rpm;
         turbineData["kp"] = *kp;
         turbineData["ki"] = *ki;
         turbineData["kd"] = *kd;
