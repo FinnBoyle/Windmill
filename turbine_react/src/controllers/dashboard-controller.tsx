@@ -4,7 +4,15 @@ import * as React from "react";
 
 const DashboardController = () => {
   const [turbines, setTurbines] = React.useState<Turbine[]>([]);
+  const refreshTurbines = () => {
+    const fetchData = async () => {
+      return getTurbines().then((turbines) => {
+        setTurbines(turbines);
+      });
+    };
 
+    fetchData().catch(console.error);
+  };
   React.useEffect(() => {
     const fetchData = async () => {
       return getTurbines().then((turbines) => {
@@ -15,7 +23,7 @@ const DashboardController = () => {
     fetchData().catch(console.error);
   }, []);
 
-  return <DashboardPage turbines={turbines} />;
+  return <DashboardPage turbines={turbines} refresh={refreshTurbines} />;
 };
 
 export default DashboardController;
