@@ -5,18 +5,18 @@
 
 // Update these with values suitable for your network.
 
-const char* ssid = "SCMS_RESEARCH";
-const char* password = "S0nny@AUT";
-const char* mqtt_server = "172.16.24.115";
+// const char* ssid = "SCMS_RESEARCH";
+// const char* password = "S0nny@AUT";
+// const char* mqtt_server = "172.16.24.115";
 
-// const char* ssid = "2.4ghz";
-// const char* password = "computer";
-// const char* mqtt_server = "192.168.1.168";
+const char* ssid = "2.4ghz";
+const char* password = "computer";
+const char* mqtt_server = "192.168.1.168";
 
 //temporary settings before file storage implemented
 //Default values
 double dVoltage = 0;
-int dStepperState = 0, dRPM= 100, dSteps = 0, dkp = 0, dki = 0, dkd = 0;
+int dStepperState = 0, dRPM = 100, dSteps = 0, dkp = 0, dki = 0, dkd = 0;
 //settings pointers
 const char* ID = "T1";
 double* voltage = &dVoltage;
@@ -38,24 +38,24 @@ void setup_wifi() {
 
   delay(10);
   // We start by connecting to a WiFi network
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
+  // Serial.println();
+  // Serial.print("Connecting to ");
+  // Serial.println(ssid);
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    Serial.print(".");
+    // Serial.print(".");
   }
 
   randomSeed(micros());
 
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
+  // Serial.println("");
+  // Serial.println("WiFi connected");
+  // Serial.println("IP address: ");
+  // Serial.println(WiFi.localIP());
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
@@ -84,13 +84,13 @@ void callback(char* topic, byte* payload, unsigned int length) {
 void reconnect() {
   // Loop until we're reconnected
   while (!client.connected()) {
-    Serial.print("Attempting MQTT connection...");
+    // Serial.print("Attempting MQTT connection...");
     // Create a random client ID
     String clientId = "ESP8266Client-";
     clientId += String(random(0xffff), HEX);
     // Attempt to connect
     if (client.connect(clientId.c_str())) {
-      Serial.println("connected");
+      // Serial.println("connected");
       // ... and resubscribe
       char topicName[strlen(ID) + strlen("SETTINGS_")];
       // topicName = malloc(strlen(ID) + strlen("SETTINGS_"));
@@ -98,9 +98,9 @@ void reconnect() {
       strcat(topicName, ID);
       client.subscribe(topicName);
     } else {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
+      // Serial.print("failed, rc=");
+      // Serial.print(client.state());
+      // Serial.println(" try again in 5 seconds");
       // Wait 5 seconds before retrying
       delay(5000);
     }
@@ -159,10 +159,10 @@ bool saveSettings() {
 }
 
 bool readSavedSettings() {
-  Serial.println("Retrieving settings from settings.json");
+  // Serial.println("Retrieving settings from settings.json");
   File file = SPIFFS.open("settings.json", "r");
   if (!file) {
-    Serial.println("settings.json not found!");
+    // Serial.println("settings.json not found!");
     return false;
   }
 
@@ -176,8 +176,8 @@ bool readSavedSettings() {
   DeserializationError error = deserializeJson(doc, file);
   if (!error) {
     *stepperState = doc["stepperState"];
-    *rpm = doc['rpm'];
-    *steps = doc['steps'];
+    *rpm = doc["rpm"];
+    *steps = doc["steps"];
     *kp = doc["kp"];
     *ki = doc["ki"];
     *kd = doc["kd"];
@@ -194,14 +194,19 @@ void loop() {
   }
   client.loop();
   if (Serial.available()) {
+
     char buffer[100] = "";
     Serial.readBytesUntil('\n', buffer, 100);
-    DynamicJsonDocument doc(1024);
+    DynamicJsonDocument doc(100);
+    // Serial.println(buffer);
+
     DeserializationError error = deserializeJson(doc, buffer);
+
     if (!error) {
       if (doc["type"] == "METRICS") {
+        // Serial.println("GOT HERE");
         //Serial.println(": " + String(bufferCopy));
-        DynamicJsonDocument turbineData(1024);
+        DynamicJsonDocument turbineData(100);
         turbineData["id"] = ID;
         turbineData["voltage"] = doc["voltage"];
         turbineData["stepperState"] = *stepperState;

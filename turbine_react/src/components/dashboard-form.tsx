@@ -81,17 +81,23 @@ const DashboardForm: React.FC<DashboardFormProps> = (
                 <FormControlLabel
                   value={3}
                   control={<Radio />}
+                  label="PID_FAKE"
+                  id="statePIDFAKE"
+                />
+                <FormControlLabel
+                  value={4}
+                  control={<Radio />}
                   label="PID"
                   id="statePID"
                 />
                 <FormControlLabel
-                  value={4}
+                  value={5}
                   control={<Radio />}
                   label="CLOCKWISE_STEP"
                   id="stateClockwise"
                 />
                 <FormControlLabel
-                  value={5}
+                  value={6}
                   control={<Radio />}
                   label="ANTI_CLOCKWISE_STEP"
                   id="stateAntiClockwise"

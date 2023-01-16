@@ -15,18 +15,25 @@ OrientationPID* orientationPID = NULL;
 OrientationStepper* orientationStepper = NULL;
 
 
-
 const byte rxPin = 2;
 const byte txPin = 3;
 SoftwareSerial espSerial(rxPin, txPin);
-//1.5e^{-0.0001\left(x-windDir\right)^{2}}
 
-const int rotation = 0;
-const int windDir = 180;
 
-double fakeVoltage() {
-  1.5 * exp(-0.0001 * pow((rotation - windDir), 2));
-}
+
+extern "C" char* sbrk(int incr);
+// void display_freeram() {
+//   Serial.print(F("- SRAM left: "));
+//   Serial.println(freeRam());
+// }
+
+// int freeRam() {
+//   extern int __heap_start,*__brkval;
+//   int v;
+//   return (int)&v - (__brkval == 0  
+//     ? (int)&__heap_start : (int) __brkval);  
+// }
+
 
 void setup() {
   analogReference(EXTERNAL);
@@ -41,16 +48,17 @@ void setup() {
 void loop() {
   unsigned long now = millis();
 
-  //every 2s send an initialization request or send turbine metrics to ESP8266
+  //every 2s send an initialization request or turbine metrics to ESP8266
   if (now - lastMsg > 2000) {
     lastMsg = now;
+
     if (orientationStepper == NULL) {
-      DynamicJsonDocument doc(1024);
+      DynamicJsonDocument doc(100);
       doc["type"] = "INIT_REQ";
       serializeJson(doc, espSerial);
       espSerial.write('\n');
     } else {
-      DynamicJsonDocument doc(1024);
+      DynamicJsonDocument doc(100);
       doc["type"] = "METRICS";
       doc["voltage"] = analogRead(A0) * 1.65 / 1023;
       serializeJson(doc, espSerial);
@@ -58,44 +66,58 @@ void loop() {
     }
   }
 
-  //If settings are recieved from ESP8266 deserialize them
   if (espSerial.available()) {
     char buffer[100] = "";
     espSerial.readBytesUntil('\n', buffer, 100);
     char bufferCopy[100] = "";
 
+
     strcpy(bufferCopy, buffer);
-    DynamicJsonDocument doc(1024);
+
+    DynamicJsonDocument doc(100);
     DeserializationError error = deserializeJson(doc, buffer);
     if (error) {
       Serial.println("Deserialization Failed!");
       Serial.println(bufferCopy);
+
+      //When error occurs clear buffer to ensure future messages are not impacted
+      espSerial.end();
+      espSerial.begin(9600);
+
     } else {
       if (doc["type"] == "SETTINGS") {
-        int kp = doc["kp"];
-        int ki = doc["ki"];
-        int kd = doc["kd"];
+        double kp = doc["kp"];
+        double ki = doc["ki"];
+        double kd = doc["kd"];
         int state = doc["stepperState"];
         int rpm = doc["rpm"];
         int steps = doc["steps"];
 
         if (orientationStepper == NULL) {
+
           orientationPID = new OrientationPID(1.5, kp, ki, kd);
-          orientationStepper = new OrientationStepper(&myStepper, orientationPID, rpm);
+          orientationStepper = new OrientationStepper(&myStepper, orientationPID);
           orientationStepper->setState(state);
-          Serial.println("INITIALIZED");
+          Serial.println(" INITIALIZED");
         } else {
+          Serial.println(bufferCopy);
           orientationPID->setConstants(kp, ki, kd);
           orientationStepper->setState(state);
           orientationStepper->setRPM(rpm);
           orientationStepper->addSteps(steps);
+          //   Serial.print("Set RPM to: ");
+          //   Serial.println(rpm);
         }
       }
     }
+
+    espSerial.end();
+    espSerial.begin(9600);
   }
 
   //Serial.println();
   if (orientationStepper != NULL) {
+    // display_freeram();
     orientationStepper->update();
   }
 }
