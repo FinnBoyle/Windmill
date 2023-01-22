@@ -5,7 +5,7 @@ import { stdin as input, stdout as output } from "node:process";
 import express, { Request, Response } from "express";
 import bodyParser, { json } from "body-parser";
 import cors from "cors";
-import Metrics from "./metrics";
+import { Metrics, Settings } from "./model";
 
 //init
 const app = express();
@@ -28,15 +28,9 @@ app.get("/metrics", async (request: Request, response: Response) => {
   response.json(Object.values(latestMetrics));
 });
 app.put("/settings", async (request: Request, response: Response) => {
-  console.log(request.body);
-  client.publish(
-    "SETTINGS_" + request.body.id,
-    `{"stepperState":${parseInt(request.body.stepperState)},"rpm": ${
-      request.body.rpm
-    },"steps":${request.body.steps},"kp": ${request.body.kp},"ki":${
-      request.body.ki
-    },"kd":${request.body.kd}}`
-  );
+  const settings: Settings = request.body;
+  client.publish("SETTINGS_" + request.body.id, JSON.stringify(settings));
+  console.log(JSON.stringify(settings));
   response.json(request.body);
 });
 
@@ -50,8 +44,7 @@ console.log(
 client.on("message", function (topic, message) {
   // message is Buffer
   if (topic == "TURBINE_FEED") {
-    let obj = JSON.parse(message.toString());
-    let metrics = new Metrics({ ...obj });
+    let metrics: Metrics = JSON.parse(message.toString());
     latestMetrics[metrics.id] = metrics;
   }
 });

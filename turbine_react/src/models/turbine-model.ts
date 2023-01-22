@@ -9,12 +9,12 @@ type Turbine = {
 
 type Settings = {
   id: string;
-  stepperState: number;
-  rpm: number;
-  steps: number;
-  kp: number;
-  ki: number;
-  kd: number;
+  stepperState?: number;
+  rpm?: number;
+  steps?: number;
+  kp?: number;
+  ki?: number;
+  kd?: number;
 };
 
 const getTurbines = async (): Promise<Turbine[]> =>

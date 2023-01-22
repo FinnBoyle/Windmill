@@ -4,6 +4,7 @@ import * as React from "react";
 
 const DashboardController = () => {
   const [turbines, setTurbines] = React.useState<Turbine[]>([]);
+  const [selected, selectTurbine] = React.useState<Turbine | undefined>();
   const refreshTurbines = () => {
     const fetchData = async () => {
       return getTurbines().then((turbines) => {
@@ -23,7 +24,23 @@ const DashboardController = () => {
     fetchData().catch(console.error);
   }, []);
 
-  return <DashboardPage turbines={turbines} refresh={refreshTurbines} />;
+  const onTurbineChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    turbines.forEach((turbine) => {
+      console.log({ turbine: turbine.id, target: e.target.value });
+      if (turbine.id === e.target.value) {
+        selectTurbine(turbine);
+      }
+    });
+  };
+
+  return (
+    <DashboardPage
+      turbines={turbines}
+      selected={selected}
+      onTurbineChange={onTurbineChange}
+      refreshTurbines={refreshTurbines}
+    />
+  );
 };
 
 export default DashboardController;

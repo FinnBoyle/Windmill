@@ -2,7 +2,12 @@
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include <FS.h>
+#include <SoftwareSerial.h>
 
+#define MYPORT_TX 13  //D7
+#define MYPORT_RX 12  //D6
+
+SoftwareSerial arduinoSerial;
 // Update these with values suitable for your network.
 
 // const char* ssid = "SCMS_RESEARCH";
@@ -11,7 +16,7 @@
 
 const char* ssid = "2.4ghz";
 const char* password = "computer";
-const char* mqtt_server = "192.168.1.168";
+const char* mqtt_server = "192.168.1.6";
 
 //temporary settings before file storage implemented
 //Default values
@@ -38,24 +43,24 @@ void setup_wifi() {
 
   delay(10);
   // We start by connecting to a WiFi network
-  // Serial.println();
-  // Serial.print("Connecting to ");
-  // Serial.println(ssid);
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    // Serial.print(".");
+    Serial.print(".");
   }
 
   randomSeed(micros());
 
-  // Serial.println("");
-  // Serial.println("WiFi connected");
-  // Serial.println("IP address: ");
-  // Serial.println(WiFi.localIP());
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
@@ -66,15 +71,27 @@ void callback(char* topic, byte* payload, unsigned int length) {
     char message[length + 1];
     memcpy(message, payload, length);
     message[length] = '\0';  //null terminate string
-    DynamicJsonDocument doc(1024);
+    DynamicJsonDocument doc(200);
     DeserializationError error = deserializeJson(doc, message);
     if (!error) {
-      *stepperState = doc["stepperState"];
-      *rpm = doc["rpm"];
-      *steps = doc["steps"];
-      *kp = doc["kp"];
-      *ki = doc["ki"];
-      *kd = doc["kd"];
+      if (doc.containsKey("kp")) {
+        *kp = doc["kp"];
+      }
+      if (doc.containsKey("ki")) {
+        *ki = doc["ki"];
+      }
+      if (doc.containsKey("kd")) {
+        *kd = doc["kd"];
+      }
+      if (doc.containsKey("stepperState")) {
+        *stepperState = doc["stepperState"];
+      }
+      if (doc.containsKey("rpm")) {
+        *rpm = doc["rpm"];
+      }
+      if (doc.containsKey("steps")) {
+        *steps = doc["steps"];
+      }
       updateControllerSettings();
       saveSettings();
     }
@@ -90,7 +107,7 @@ void reconnect() {
     clientId += String(random(0xffff), HEX);
     // Attempt to connect
     if (client.connect(clientId.c_str())) {
-      // Serial.println("connected");
+      Serial.println("connected");
       // ... and resubscribe
       char topicName[strlen(ID) + strlen("SETTINGS_")];
       // topicName = malloc(strlen(ID) + strlen("SETTINGS_"));
@@ -98,9 +115,9 @@ void reconnect() {
       strcat(topicName, ID);
       client.subscribe(topicName);
     } else {
-      // Serial.print("failed, rc=");
-      // Serial.print(client.state());
-      // Serial.println(" try again in 5 seconds");
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
       // Wait 5 seconds before retrying
       delay(5000);
     }
@@ -112,6 +129,8 @@ void setup() {
   pinMode(BUILTIN_LED, OUTPUT);  // Initialize the BUILTIN_LED pin as an output
   digitalWrite(BUILTIN_LED, HIGH);
   Serial.begin(9600);
+  arduinoSerial.begin(9600, SWSERIAL_8N1, MYPORT_RX, MYPORT_TX, false);
+
   setup_wifi();
   digitalWrite(BUILTIN_LED, LOW);
   client.setServer(mqtt_server, 1883);
@@ -121,7 +140,7 @@ void setup() {
 }
 
 void updateControllerSettings() {
-  DynamicJsonDocument doc(1024);
+  DynamicJsonDocument doc(200);
   doc["type"] = "SETTINGS";
   doc["stepperState"] = *stepperState;
   doc["rpm"] = *rpm;
@@ -129,8 +148,8 @@ void updateControllerSettings() {
   doc["kp"] = *kp;
   doc["ki"] = *ki;
   doc["kd"] = *kd;
-  serializeJson(doc, Serial);
-  Serial.write('\n');
+  serializeJson(doc, arduinoSerial);
+  arduinoSerial.write('\n');
   *steps = 0;
 }
 
@@ -141,7 +160,7 @@ bool saveSettings() {
     return false;
   }
 
-  DynamicJsonDocument doc(1024);
+  DynamicJsonDocument doc(200);
   doc["stepperState"] = *stepperState;
   doc["rpm"] = *rpm;
   doc["steps"] = *steps;
@@ -159,10 +178,10 @@ bool saveSettings() {
 }
 
 bool readSavedSettings() {
-  // Serial.println("Retrieving settings from settings.json");
+  // arduinoSerial.println("Retrieving settings from settings.json");
   File file = SPIFFS.open("settings.json", "r");
   if (!file) {
-    // Serial.println("settings.json not found!");
+    // arduinoSerial.println("settings.json not found!");
     return false;
   }
 
@@ -172,7 +191,7 @@ bool readSavedSettings() {
   // }
   // Serial.println();
 
-  DynamicJsonDocument doc(1024);
+  DynamicJsonDocument doc(200);
   DeserializationError error = deserializeJson(doc, file);
   if (!error) {
     *stepperState = doc["stepperState"];
@@ -193,20 +212,31 @@ void loop() {
     reconnect();
   }
   client.loop();
-  if (Serial.available()) {
+  if (arduinoSerial.available()) {
 
-    char buffer[100] = "";
-    Serial.readBytesUntil('\n', buffer, 100);
-    DynamicJsonDocument doc(100);
-    // Serial.println(buffer);
+    char buffer[200] = "";
+    arduinoSerial.readBytesUntil('\n', buffer, 200);
+    DynamicJsonDocument doc(200);
+    char bufferCopy[200] = "";
+
+
+    strcpy(bufferCopy, buffer);
 
     DeserializationError error = deserializeJson(doc, buffer);
 
-    if (!error) {
+    if (error) {
+
+      Serial.println("Deserialization Failed!");
+      Serial.println(bufferCopy);
+      //When error occurs clear buffer to ensure future messages are not impacted
+      arduinoSerial.end();
+      arduinoSerial.begin(9600, SWSERIAL_8N1, MYPORT_RX, MYPORT_TX, false);
+    } else {
       if (doc["type"] == "METRICS") {
-        // Serial.println("GOT HERE");
+
         //Serial.println(": " + String(bufferCopy));
-        DynamicJsonDocument turbineData(100);
+
+        DynamicJsonDocument turbineData(200);
         turbineData["id"] = ID;
         turbineData["voltage"] = doc["voltage"];
         turbineData["stepperState"] = *stepperState;
@@ -214,9 +244,10 @@ void loop() {
         turbineData["kp"] = *kp;
         turbineData["ki"] = *ki;
         turbineData["kd"] = *kd;
-        char dataBuffer[100] = "";
+        char dataBuffer[200] = "";
 
         serializeJson(turbineData, dataBuffer);
+        // Serial.println(dataBuffer);
         client.publish("TURBINE_FEED", dataBuffer);
       } else if (doc["type"] == "INIT_REQ") {
         updateControllerSettings();

@@ -1,7 +1,6 @@
 import DashboardForm from "../components/dashboard-form";
 import React from "react";
 import { Settings, Turbine, updateSettings } from "../models/turbine-model";
-import { SelectChangeEvent } from "@mui/material";
 
 type DashboardFormProps = {
   turbines: Turbine[];
@@ -29,26 +28,31 @@ const DashboardFormController: React.FC<DashboardFormProps> = (
     const kp = parseInt((form.kp as HTMLInputElement).value);
     const ki = parseInt((form.ki as HTMLInputElement).value);
     const kd = parseInt((form.kd as HTMLInputElement).value);
-    if (
-      isNaN(kd) ||
-      isNaN(ki) ||
-      isNaN(kd) ||
-      isNaN(rpm) ||
-      isNaN(steps) ||
-      state.id === ""
-    ) {
-      return;
-    }
+
     const fetchData = async () => {
-      const settings: Settings = {
+      let settings: Settings = {
         id: state.id,
         stepperState: state.stepperState,
-        rpm,
-        steps,
-        kp,
-        ki,
-        kd,
       };
+      if (!isNaN(kp)) {
+        settings.kp = kp;
+      }
+
+      if (!isNaN(ki)) {
+        settings.ki = ki;
+      }
+      if (!isNaN(kd)) {
+        settings.kd = kd;
+      }
+      if (!isNaN(steps)) {
+        settings.steps = steps;
+      }
+      if (!isNaN(rpm)) {
+        settings.rpm = rpm;
+      }
+      if (state.id !== "") {
+        settings.id = state.id;
+      }
       return updateSettings(settings);
     };
 
