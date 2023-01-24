@@ -6,7 +6,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
-import { Turbine } from "../models/turbine-model";
+import { Turbine } from "../../models/turbine-model";
 
 type DashboardTableProps = {
   turbines: Turbine[];
@@ -22,6 +22,7 @@ const DashboardTable: React.FC<DashboardTableProps> = (
         <TableHead>
           <TableRow>
             <TableCell>ID</TableCell>
+            <TableCell>Memory</TableCell>
             <TableCell>Voltage</TableCell>
             <TableCell>Stepper State</TableCell>
             <TableCell>Kp</TableCell>
@@ -39,6 +40,8 @@ const DashboardTable: React.FC<DashboardTableProps> = (
                 <TableCell component="th" scope="row">
                   {turbine.id}
                 </TableCell>
+                <TableCell>{turbine.memory}</TableCell>
+
                 <TableCell>{turbine.voltage}</TableCell>
 
                 <TableCell>{turbine.stepperState}</TableCell>

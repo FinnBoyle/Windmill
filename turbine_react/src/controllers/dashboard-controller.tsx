@@ -28,6 +28,7 @@ const DashboardController = () => {
     turbines.forEach((turbine) => {
       console.log({ turbine: turbine.id, target: e.target.value });
       if (turbine.id === e.target.value) {
+        console.log(turbine);
         selectTurbine(turbine);
       }
     });

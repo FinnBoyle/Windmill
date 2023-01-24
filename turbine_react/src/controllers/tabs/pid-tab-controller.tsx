@@ -6,12 +6,13 @@ type PIDTabProps = {
 };
 const PIDTabController: React.FC<PIDTabProps> = (props: PIDTabProps) => {
   const onFormSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
+    e.preventDefault();
+
     if (!props.selected) {
       return;
     }
 
     const { id } = props.selected;
-    e.preventDefault();
     const form = e.target as HTMLFormElement;
     const kp = parseInt((form.kp as HTMLInputElement).value);
     const ki = parseInt((form.ki as HTMLInputElement).value);

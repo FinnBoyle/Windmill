@@ -9,15 +9,18 @@ type StepperTabProps = {
 const StepperTabController: React.FC<StepperTabProps> = (
   props: StepperTabProps
 ) => {
-  const [stepperState, setStepperState] = React.useState<number>(0);
+  const [stepperState, setStepperState] = React.useState<number>(
+    props.selected ? props.selected.stepperState : 0
+  );
   const onFormSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
+    e.preventDefault();
     if (!props.selected) {
       return;
     }
+    console.log("GOT HERE");
 
     const { id } = props.selected;
 
-    e.preventDefault();
     const form = e.target as HTMLFormElement;
     const rpm = parseInt((form.rpm as HTMLInputElement).value);
     const steps = parseInt((form.steps as HTMLInputElement).value);
@@ -44,12 +47,14 @@ const StepperTabController: React.FC<StepperTabProps> = (
 
   const onStateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setStepperState(parseInt(e.target.value));
-
-    return;
   };
 
   return (
-    <StepperTab onFormSubmit={onFormSubmit} onStateChange={onStateChange} />
+    <StepperTab
+      onFormSubmit={onFormSubmit}
+      onStateChange={onStateChange}
+      stepperState={stepperState}
+    />
   );
 };
 export default StepperTabController;

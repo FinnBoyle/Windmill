@@ -16,7 +16,7 @@ SoftwareSerial arduinoSerial;
 
 const char* ssid = "2.4ghz";
 const char* password = "computer";
-const char* mqtt_server = "192.168.1.6";
+const char* mqtt_server = "192.168.1.168";
 
 //temporary settings before file storage implemented
 //Default values
@@ -238,6 +238,7 @@ void loop() {
 
         DynamicJsonDocument turbineData(200);
         turbineData["id"] = ID;
+        turbineData["memory"] = doc["memory"];
         turbineData["voltage"] = doc["voltage"];
         turbineData["stepperState"] = *stepperState;
         turbineData["rpm"] = *rpm;

@@ -33,17 +33,17 @@ int* kd = &dkd;
 
 
 extern "C" char* sbrk(int incr);
-// void display_freeram() {
-//   Serial.print(F("- SRAM left: "));
-//   Serial.println(freeRam());
-// }
+void display_freeram() {
+  Serial.print(F("- SRAM left: "));
+  Serial.println(freeRam());
+}
 
-// int freeRam() {
-//   extern int __heap_start,*__brkval;
-//   int v;
-//   return (int)&v - (__brkval == 0
-//     ? (int)&__heap_start : (int) __brkval);
-// }
+int freeRam() {
+  extern int __heap_start,*__brkval;
+  int v;
+  return (int)&v - (__brkval == 0
+    ? (int)&__heap_start : (int) __brkval);
+}
 
 
 void setup() {
@@ -72,6 +72,7 @@ void loop() {
       DynamicJsonDocument doc(100);
       doc["type"] = "METRICS";
       doc["voltage"] = analogRead(A0) * 1.65 / 1023;
+      doc["memory"] = freeRam();
       serializeJson(doc, espSerial);
       espSerial.write('\n');
     }

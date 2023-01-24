@@ -31,6 +31,15 @@ const DashboardLineChart = () => {
         borderWidth: 1,
         borderColor: "rgb(55,162,235)",
         backgroundColor: "rgb(53,162,235)",
+        yAxisID: "y",
+      },
+      {
+        label: "PID Error",
+        data: [15, 15, 15, 15, 15, 15, 15, 5, 5, 1, 1],
+        borderWidth: 1,
+        borderColor: "rgb(55,162,235)",
+        backgroundColor: "rgb(53,162,235)",
+        yAxisID: "y1",
       },
     ],
   };
@@ -44,10 +53,22 @@ const DashboardLineChart = () => {
     },
     scales: {
       y: {
-        beginAtZero: true,
+        type: "linear" as const,
+        display: true,
+        position: "left" as const,
+      },
+
+      y1: {
+        type: "linear" as const,
+        display: true,
+        position: "right" as const,
+        grid: {
+          drawOnChartArea: false,
+        },
       },
     },
   };
+
   return <Line options={options} data={data}></Line>;
 };
 

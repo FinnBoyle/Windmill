@@ -1,5 +1,6 @@
 type Metrics = {
   id: string;
+  memory: number;
   voltage: number;
   stepperState: number;
   rpm: number;

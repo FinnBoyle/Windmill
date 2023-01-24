@@ -1,17 +1,14 @@
 import React from "react";
 import { Turbine } from "../models/turbine-model";
-import DashboardTable from "./dashboard-table";
-import DashboardFormController from "../controllers/dashboard-form-controller";
+
 import { Box, Paper, Grid, Button } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import IconButton from "@mui/material/IconButton";
-import DashboardLineChart from "./tabs/dashboard-line-graph";
+
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import { TextField, MenuItem } from "@mui/material";
 import MetricsTab from "./tabs/metrics-tab";
-import StepperTab from "./tabs/stepper-tab";
-import PIDTab from "./tabs/pid-tab";
+
 import StepperTabController from "../controllers/tabs/stepper-tab-controller";
 import PIDTabController from "../controllers/tabs/pid-tab-controller";
 
@@ -60,8 +57,8 @@ const DashboardPage: React.FC<TurbineViewProps> = (props: TurbineViewProps) => {
           select
           label="ID"
           size="small"
-          value={selected ? selected.id : undefined}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onTurbineChange}
+          value={selected ? selected.id : ""}
+          onChange={onTurbineChange}
         >
           {turbines.map((turbine) => (
             <MenuItem key={turbine.id} value={turbine.id}>

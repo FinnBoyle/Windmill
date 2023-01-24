@@ -1,7 +1,4 @@
 import * as React from "react";
-import Radio from "@mui/material/Radio";
-import RadioGroup from "@mui/material/RadioGroup";
-import FormControlLabel from "@mui/material/FormControlLabel";
 import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
 import Grid from "@mui/material/Grid";
@@ -9,69 +6,48 @@ import Button from "@mui/material/Button";
 
 import TextField from "@mui/material/TextField";
 import FormGroup from "@mui/material/FormGroup";
+import { MenuItem } from "@mui/material";
 type StepperTabProps = {
   onFormSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   onStateChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  stepperState: number;
 };
+
+enum StepperState {
+  OFF,
+  CLOCKWISE_AUTO,
+  ANTI_CLOCKWISE_AUTO,
+  PID_FAKE,
+  PID,
+  CLOCKWISE_STEP,
+  ANTI_CLOCKWISE_STEP,
+}
+
 const StepperTab: React.FC<StepperTabProps> = (props: StepperTabProps) => {
-  const { onFormSubmit, onStateChange } = props;
+  const { onFormSubmit, onStateChange, stepperState } = props;
+  const states = Object.keys(StepperState).filter((v) => isNaN(Number(v)));
+  const stateNumbers = Object.values(StepperState).filter(
+    (v) => !isNaN(Number(v))
+  );
   return (
-    <form>
+    <form onSubmit={(event) => onFormSubmit(event)}>
       <Grid>
         <Grid item xs={12}>
           <FormControl>
-            <FormLabel>Orientation Stepper State</FormLabel>
-            <RadioGroup
-              row
-              defaultValue={0}
+            <FormLabel>Stepper Orientation State</FormLabel>
+            <TextField
               id="stepperState"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                onStateChange(e)
-              }
+              select
+              value={stepperState}
+              onChange={onStateChange}
+              sx={{ mx: 1 }}
             >
-              <FormControlLabel
-                value={0}
-                control={<Radio />}
-                label="OFF"
-                id="stateOff"
-              />
-              <FormControlLabel
-                value={1}
-                control={<Radio />}
-                label="CLOCKWISE_AUTO"
-                id="stateClockwise"
-              />
-              <FormControlLabel
-                value={2}
-                control={<Radio />}
-                label="ANTI_CLOCKWISE_AUTO"
-                id="stateAntiClockwise"
-              />
-              <FormControlLabel
-                value={3}
-                control={<Radio />}
-                label="PID_FAKE"
-                id="statePIDFAKE"
-              />
-              <FormControlLabel
-                value={4}
-                control={<Radio />}
-                label="PID"
-                id="statePID"
-              />
-              <FormControlLabel
-                value={5}
-                control={<Radio />}
-                label="CLOCKWISE_STEP"
-                id="stateClockwise"
-              />
-              <FormControlLabel
-                value={6}
-                control={<Radio />}
-                label="ANTI_CLOCKWISE_STEP"
-                id="stateAntiClockwise"
-              />
-            </RadioGroup>
+              {states.map((state, i) => (
+                <MenuItem key={stateNumbers[i]} value={stateNumbers[i]}>
+                  {state}
+                </MenuItem>
+              ))}
+            </TextField>
           </FormControl>
         </Grid>
         <Grid item xs={12}>

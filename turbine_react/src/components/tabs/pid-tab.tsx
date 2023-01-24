@@ -14,7 +14,7 @@ type PIDTabProps = {
 const PIDTab: React.FC<PIDTabProps> = (props: PIDTabProps) => {
   const { onFormSubmit } = props;
   return (
-    <form>
+    <form onSubmit={(event) => onFormSubmit(event)}>
       <Grid>
         <Grid item xs={12}>
           <Box display="flex" justifyContent="center" alignItems="center">
