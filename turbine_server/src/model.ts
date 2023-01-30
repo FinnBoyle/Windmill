@@ -8,6 +8,13 @@ type Metrics = {
   ki: number;
   kd: number;
 };
+
+type PIDData = {
+  id: string;
+  interval: number;
+  rotations: number[];
+  errors: number[];
+};
 type Settings = {
   stepperState: number;
   rpm?: number;
@@ -16,4 +23,4 @@ type Settings = {
   ki?: number;
   kd?: number;
 };
-export { Metrics, Settings };
+export { Metrics, PIDData, Settings };

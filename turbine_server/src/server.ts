@@ -5,7 +5,7 @@ import { stdin as input, stdout as output } from "node:process";
 import express, { Request, Response } from "express";
 import bodyParser, { json } from "body-parser";
 import cors from "cors";
-import { Metrics, Settings } from "./model";
+import { Metrics, PIDData, Settings } from "./model";
 
 //init
 const app = express();
@@ -18,14 +18,19 @@ app.use(
 app.use(cors());
 
 const client = mqtt.connect("mqtt://localhost");
-let latestMetrics: any = {};
+let latestMetrics: Record<string, Metrics> = {};
+let latestPIDData: Record<string, PIDData> = {};
 client.on("connect", function () {
   client.subscribe("TURBINE_FEED");
+  client.subscribe("PID_FEED");
 });
 
 //Define http routes
 app.get("/metrics", async (request: Request, response: Response) => {
   response.json(Object.values(latestMetrics));
+});
+app.get("/pid", async (request: Request, response: Response) => {
+  response.json(Object.values(latestPIDData));
 });
 app.put("/settings", async (request: Request, response: Response) => {
   const settings: Settings = request.body;
@@ -46,5 +51,9 @@ client.on("message", function (topic, message) {
   if (topic == "TURBINE_FEED") {
     let metrics: Metrics = JSON.parse(message.toString());
     latestMetrics[metrics.id] = metrics;
+  } else if (topic == "PID_FEED") {
+    let pidData: PIDData = JSON.parse(message.toString());
+    console.log(message.toString());
+    latestPIDData[pidData.id] = pidData;
   }
 });

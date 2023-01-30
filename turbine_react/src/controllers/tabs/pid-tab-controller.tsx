@@ -1,10 +1,27 @@
 import PIDTab from "../../components/tabs/pid-tab";
-import { Settings, Turbine, updateSettings } from "../../models/turbine-model";
+import {
+  getPIDData,
+  PIDData,
+  Settings,
+  Turbine,
+  updateSettings,
+} from "../../models/turbine-model";
+import * as React from "react";
 
 type PIDTabProps = {
   selected: Turbine | undefined;
 };
+type PIDTabState = {
+  interval: number;
+  rotations: number[];
+  errors: number[];
+};
 const PIDTabController: React.FC<PIDTabProps> = (props: PIDTabProps) => {
+  const [state, setState] = React.useState<PIDTabState>({
+    interval: 0,
+    rotations: [],
+    errors: [],
+  });
   const onFormSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
 
@@ -40,7 +57,29 @@ const PIDTabController: React.FC<PIDTabProps> = (props: PIDTabProps) => {
 
     fetchData().catch(console.error);
   };
-  return <PIDTab onFormSubmit={onFormSubmit} />;
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      return getPIDData().then((data: PIDData[]) => {
+        data.forEach((pidData: PIDData) => {
+          if (props.selected && props.selected.id === pidData.id) {
+            const { interval, rotations, errors } = pidData;
+            setState({ interval, rotations, errors });
+          }
+        });
+      });
+    };
+
+    fetchData().catch(console.error);
+  }, []);
+  return (
+    <PIDTab
+      onFormSubmit={onFormSubmit}
+      interval={state.interval}
+      rotations={state.rotations}
+      errors={state.errors}
+    />
+  );
 };
 
 export default PIDTabController;

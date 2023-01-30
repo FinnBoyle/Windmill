@@ -6,7 +6,7 @@ private:
   PID_v2 m_pid;
  
 public:
-  OrientationPID(double setpoint, double kp, double ki, double kd, );
+  OrientationPID(double setpoint, double kp, double ki, double kd );
   void setConstants(double kp, double ki, double kd);
   double rotationChange(double input);
 

@@ -16,7 +16,7 @@ SoftwareSerial arduinoSerial;
 
 const char* ssid = "2.4ghz";
 const char* password = "computer";
-const char* mqtt_server = "192.168.1.168";
+const char* mqtt_server = "192.168.1.4";
 
 //temporary settings before file storage implemented
 //Default values
@@ -214,10 +214,10 @@ void loop() {
   client.loop();
   if (arduinoSerial.available()) {
 
-    char buffer[200] = "";
-    arduinoSerial.readBytesUntil('\n', buffer, 200);
-    DynamicJsonDocument doc(200);
-    char bufferCopy[200] = "";
+    char buffer[450] = "";
+    arduinoSerial.readBytesUntil('\n', buffer, 450);
+    DynamicJsonDocument doc(450);
+    char bufferCopy[450] = "";
 
 
     strcpy(bufferCopy, buffer);
@@ -252,6 +252,22 @@ void loop() {
         client.publish("TURBINE_FEED", dataBuffer);
       } else if (doc["type"] == "INIT_REQ") {
         updateControllerSettings();
+      } else if (doc["type"] == "PID") {
+        // Serial.println("GOT HERE!");
+        DynamicJsonDocument pidData(500);
+        pidData["id"] = ID;
+        pidData["interval"] = doc["interval"];
+        pidData["rotations"] = doc["rotations"];
+        pidData["errors"] = doc["errors"];
+        char dataBuffer[500] = "";
+
+        serializeJson(pidData, dataBuffer);
+        Serial.println(bufferCopy);
+      
+        Serial.println(dataBuffer);
+        client.publish("PID_FEED", dataBuffer);
+        
+
       }
     }
   }

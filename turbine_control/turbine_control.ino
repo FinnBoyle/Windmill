@@ -7,7 +7,8 @@
 const int stepsPerRevolution = 200;
 String message = "";
 bool msgReady = false;
-unsigned long lastMsg = 0;
+unsigned long lastMetricsSend = 0;
+unsigned long lastPIDSend = 0;
 
 // initialize the stepper library on pins 8 through 11:
 Stepper myStepper(stepsPerRevolution, 9, 10, 11, 12);
@@ -39,15 +40,15 @@ void display_freeram() {
 }
 
 int freeRam() {
-  extern int __heap_start,*__brkval;
+  extern int __heap_start, *__brkval;
   int v;
-  return (int)&v - (__brkval == 0
-    ? (int)&__heap_start : (int) __brkval);
+  return (int)&v - (__brkval == 0 ? (int)&__heap_start : (int)__brkval);
 }
 
 
 void setup() {
-  analogReference(EXTERNAL);
+  // analogReference(EXTERNAL);
+  analogReference(DEFAULT);
   pinMode(8, OUTPUT);
   digitalWrite(8, HIGH);
   pinMode(13, OUTPUT);
@@ -57,11 +58,13 @@ void setup() {
 }
 
 void loop() {
+
+
   unsigned long now = millis();
 
   //every 2s send an initialization request or turbine metrics to ESP8266
-  if (now - lastMsg > 2000) {
-    lastMsg = now;
+  if (now - lastMetricsSend > 2000) {
+    lastMetricsSend = now;
     if (orientationStepper == NULL) {
       DynamicJsonDocument doc(100);
       doc["type"] = "INIT_REQ";
@@ -121,8 +124,8 @@ void loop() {
         }
 
         if (orientationStepper == NULL) {
-          orientationPID = new OrientationPID(1.5, *kp, *ki, *kd, 0, 0);
-          orientationStepper = new OrientationStepper(&myStepper, orientationPID);
+          orientationPID = new OrientationPID(1.5, *kp, *ki, *kd);
+          orientationStepper = new OrientationStepper(&myStepper, orientationPID, 200, 20);
           orientationStepper->setState(*state);
           Serial.println("INITIALIZED");
         } else {
@@ -141,5 +144,28 @@ void loop() {
   if (orientationStepper != NULL) {
     // display_freeram();
     orientationStepper->update();
+    bool pidIntervalDone = (now - lastPIDSend) > orientationStepper->getInterval();
+    if (orientationStepper->bufferFull() && pidIntervalDone) {
+      lastPIDSend = now;
+      DynamicJsonDocument doc(300);
+      doc["type"] = "PID";
+      doc["interval"] = orientationStepper->getInterval();
+
+      int* rotationsArray = orientationStepper->getRotationHistory();
+      JsonArray rotations = doc.createNestedArray("rotations");
+      for (int i = 0; i < 11; i++) {
+        rotations.add(rotationsArray[i]);
+      }
+      
+      JsonArray errors = doc.createNestedArray("errors");
+      float* errorsArray = orientationStepper->getErrorHistory();
+      for (int i = 0; i < 11; i++) {
+        errors.add(errorsArray[i]);
+      }
+
+      serializeJson(doc, espSerial);
+      espSerial.write('\n');
+      orientationStepper->resetBuffers();
+    }
   }
 }

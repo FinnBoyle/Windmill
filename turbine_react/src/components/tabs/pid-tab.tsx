@@ -5,21 +5,28 @@ import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import FormGroup from "@mui/material/FormGroup";
-import DashboardLineChart from "./dashboard-line-graph";
+import DashboardPIDChart from "./dashboard-pid-chart";
 import IconButton from "@mui/material/IconButton";
 import RefreshIcon from "@mui/icons-material/Refresh";
 type PIDTabProps = {
   onFormSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  interval: number;
+  rotations: number[];
+  errors: number[];
 };
 const PIDTab: React.FC<PIDTabProps> = (props: PIDTabProps) => {
-  const { onFormSubmit } = props;
+  const { onFormSubmit, interval, rotations, errors } = props;
   return (
     <form onSubmit={(event) => onFormSubmit(event)}>
       <Grid>
         <Grid item xs={12}>
           <Box display="flex" justifyContent="center" alignItems="center">
             <Box sx={{ width: "75%" }}>
-              <DashboardLineChart />
+              <DashboardPIDChart
+                interval={interval}
+                rotations={rotations}
+                errors={errors}
+              />
               <IconButton color="primary">
                 <RefreshIcon />
               </IconButton>

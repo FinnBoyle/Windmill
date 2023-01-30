@@ -21,13 +21,21 @@ ChartJS.register(
 );
 ChartJS.defaults.color = "#FFFFFF";
 
-const DashboardLineChart = () => {
+type PIDChartProps = {
+  interval: number;
+  rotations: number[];
+  errors: number[];
+};
+const DashboardPIDChart: React.FC<PIDChartProps> = (props: PIDChartProps) => {
+  const { interval, rotations, errors } = props;
   const data = {
-    labels: [0, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000],
+    labels: Array.from(Array(rotations.length).keys()).map(
+      (key) => key * interval
+    ),
     datasets: [
       {
         label: "Turbine Rotation",
-        data: [15, 30, 45, 60, 75, 90, 105, 110, 115, 116, 116],
+        data: rotations,
         borderWidth: 1,
         borderColor: "rgb(55,162,235)",
         backgroundColor: "rgb(53,162,235)",
@@ -35,7 +43,7 @@ const DashboardLineChart = () => {
       },
       {
         label: "PID Error",
-        data: [15, 15, 15, 15, 15, 15, 15, 5, 5, 1, 1],
+        data: errors,
         borderWidth: 1,
         borderColor: "rgb(55,162,235)",
         backgroundColor: "rgb(53,162,235)",
@@ -72,4 +80,4 @@ const DashboardLineChart = () => {
   return <Line options={options} data={data}></Line>;
 };
 
-export default DashboardLineChart;
+export default DashboardPIDChart;

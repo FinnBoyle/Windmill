@@ -8,6 +8,13 @@ type Turbine = {
   kd: number;
 };
 
+type PIDData = {
+  id: string;
+  interval: number;
+  rotations: number[];
+  errors: number[];
+};
+
 type Settings = {
   id: string;
   stepperState?: number;
@@ -25,6 +32,13 @@ const getTurbines = async (): Promise<Turbine[]> =>
       return data as Turbine[];
     });
 
+const getPIDData = async (): Promise<PIDData[]> =>
+  fetch("http://localhost:5000/pid")
+    .then((res) => res.json())
+    .then((data) => {
+      return data as PIDData[];
+    });
+
 const updateSettings = async (settings: Settings) => {
   return fetch("http://localhost:5000/settings", {
     method: "PUT",
@@ -35,5 +49,5 @@ const updateSettings = async (settings: Settings) => {
   });
 };
 
-export { getTurbines, updateSettings };
-export type { Turbine, Settings };
+export { getTurbines, getPIDData, updateSettings };
+export type { Turbine, PIDData, Settings };

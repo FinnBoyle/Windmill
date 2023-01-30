@@ -2,7 +2,7 @@
 #include <Arduino.h>
 #include <math.h>
 
-OrientationStepper::OrientationStepper(Stepper* stepper, OrientationPID* pid) {
+OrientationStepper::OrientationStepper(Stepper* stepper, OrientationPID* pid,  int pidInterval, int bufferSize) {
   m_stepper = stepper;
   m_pid = pid;
   m_state = OFF;
@@ -12,6 +12,12 @@ OrientationStepper::OrientationStepper(Stepper* stepper, OrientationPID* pid) {
   m_rotation = 0;
   m_stepper->setSpeed(m_rpm);
   m_lastMove = 0;
+
+  m_pidInterval = pidInterval;
+  m_bufferSize = bufferSize;
+  m_pidErrorHistory = new float[m_bufferSize];
+  m_rotationHistory = new int[m_bufferSize];
+  m_bufferIndex = 0;
 }
 
 double OrientationStepper::fakeVoltage() {
@@ -37,17 +43,20 @@ void OrientationStepper::handleSteps() {
   }else if (m_state == PID_FAKE) {
     unsigned long now = millis();
     //every 2s send an initialization request or turbine metrics to ESP8266
-    if (now - m_lastMove > 333) {
+    if (now - m_lastMove > m_pidInterval) {
       m_lastMove = now;
       double voltage = fakeVoltage();
       double change = m_pid->rotationChange(voltage);
       // Serial.println(change);
+      m_pidErrorHistory[m_bufferIndex] = change;
+      m_rotationHistory[m_bufferIndex] = m_rotation;
+      m_bufferIndex++;
       m_stepper->step(calculateSteps(change));
     }
   } else if (m_state == PID) {
     unsigned long now = millis();
     //every 2s send an initialization request or turbine metrics to ESP8266
-    if (now - m_lastMove > 333) {
+    if (now - m_lastMove > m_pidInterval) {
       m_lastMove = now;
       double voltage = analogRead(A0) * 1.65 / 1023;
        double change = m_pid->rotationChange(voltage);
@@ -112,3 +121,19 @@ int OrientationStepper::calculateSteps(int degrees) {
   }
   return steps;
 }
+
+ void OrientationStepper::resetBuffers() {
+   m_bufferIndex = 0;
+ }
+  bool OrientationStepper::bufferFull() {
+    return m_bufferIndex >= m_bufferSize;
+  }
+  float* OrientationStepper::getErrorHistory() {
+    return m_pidErrorHistory;
+  }
+  int* OrientationStepper::getRotationHistory() {
+    return m_rotationHistory;
+  }
+  int OrientationStepper::getInterval() {
+    return m_pidInterval;
+  }
