@@ -45,7 +45,9 @@ int freeRam() {
   return (int)&v - (__brkval == 0 ? (int)&__heap_start : (int)__brkval);
 }
 
-
+double getVoltage() {
+  return (analogRead(A0) * 5 / 1024.0) - 1.4;
+}
 void setup() {
   // analogReference(EXTERNAL);
   analogReference(DEFAULT);
@@ -58,10 +60,8 @@ void setup() {
 }
 
 void loop() {
-
-
   unsigned long now = millis();
-
+  double volts = getVoltage();
   //every 2s send an initialization request or turbine metrics to ESP8266
   if (now - lastMetricsSend > 2000) {
     lastMetricsSend = now;
@@ -74,7 +74,7 @@ void loop() {
     } else {
       DynamicJsonDocument doc(100);
       doc["type"] = "METRICS";
-      doc["voltage"] = analogRead(A0) * 1.65 / 1023;
+      doc["voltage"] = volts;
       doc["memory"] = freeRam();
       serializeJson(doc, espSerial);
       espSerial.write('\n');
@@ -124,7 +124,7 @@ void loop() {
         }
 
         if (orientationStepper == NULL) {
-          orientationPID = new OrientationPID(1.5, *kp, *ki, *kd);
+          orientationPID = new OrientationPID(0.5, *kp, *ki, *kd);
           orientationStepper = new OrientationStepper(&myStepper, orientationPID, 200, 20);
           orientationStepper->setState(*state);
           Serial.println("INITIALIZED");
@@ -143,7 +143,7 @@ void loop() {
   //Serial.println();
   if (orientationStepper != NULL) {
     // display_freeram();
-    orientationStepper->update();
+    orientationStepper->update(volts);
     bool pidIntervalDone = (now - lastPIDSend) > orientationStepper->getInterval();
     if (orientationStepper->bufferFull() && pidIntervalDone) {
       lastPIDSend = now;
@@ -156,7 +156,7 @@ void loop() {
       for (int i = 0; i < 11; i++) {
         rotations.add(rotationsArray[i]);
       }
-      
+
       JsonArray errors = doc.createNestedArray("errors");
       float* errorsArray = orientationStepper->getErrorHistory();
       for (int i = 0; i < 11; i++) {

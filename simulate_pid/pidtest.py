@@ -2,11 +2,11 @@ import math
 from random import randrange
 import time
 from simple_pid import PID
-pid = PID(10,0,0, setpoint=1.5)
-rotation = 300
+pid = PID(10, 0, 0, setpoint=0.5)
+rotation = 0
 windDir = 180
 
-#Time of previous change in wind direction
+# Time of previous change in wind direction
 prev_time = time.time()
 
 
@@ -15,9 +15,9 @@ def main():
     while True:
         current_time = time.time()
         if ((current_time - prev_time) > 5):
-            windDir = randrange(360) 
+            windDir = randrange(360)
             prev_time = current_time
-        
+
         voltage = fakeVoltage()
         control = pid(voltage)
         control = control
@@ -28,12 +28,17 @@ def main():
 
 
 def fakeVoltage():
-    return 1.5*math.exp(-0.0001*math.pow(rotation-windDir, 2))
+    return math.sin(rotation/57.3)/2.0
+    # return 1.5*math.exp(-0.0001*math.pow(rotation-windDir, 2))
 
 
 def rotateTurbine(change):
     global rotation
-    rotation += change
+    if (change < 1.8):
+        rotation += 1.8
+    else:
+        rotation += change
+
     rotation = rotation % 360
 
 

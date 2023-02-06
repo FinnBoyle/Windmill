@@ -2,8 +2,9 @@
 
 class OrientationPID {
 private:
-  double m_setpoint, m_kp, m_ki, m_kd;
+  double m_setpoint, m_kp, m_ki, m_kd, m_lastError;
   PID_v2 m_pid;
+  
  
 public:
   OrientationPID(double setpoint, double kp, double ki, double kd );

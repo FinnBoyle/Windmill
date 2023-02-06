@@ -27,14 +27,13 @@ private:
 
 public:
   OrientationStepper(Stepper* stepper, OrientationPID* pid, int pidInterval, int bufferSize);
-  void handleSteps();
-  void update();
+  void update(double volts);
   StepperState getState();
   void setState(int state);
   void setRPM(int rpm);
   void addSteps(int steps);
   double fakeVoltage();
-  int calculateSteps(int change);
+  int calculateSteps(double change);
 
   //PID feed buffer functions
   void resetBuffers();

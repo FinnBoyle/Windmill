@@ -16,7 +16,7 @@ SoftwareSerial arduinoSerial;
 
 const char* ssid = "2.4ghz";
 const char* password = "computer";
-const char* mqtt_server = "192.168.1.4";
+const char* mqtt_server = "192.168.1.168";
 
 //temporary settings before file storage implemented
 //Default values

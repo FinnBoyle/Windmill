@@ -1,7 +1,7 @@
 #include "orientation_stepper.h"
 #include <Arduino.h>
 #include <math.h>
-
+#define PI 3.14159265
 OrientationStepper::OrientationStepper(Stepper* stepper, OrientationPID* pid,  int pidInterval, int bufferSize) {
   m_stepper = stepper;
   m_pid = pid;
@@ -20,12 +20,15 @@ OrientationStepper::OrientationStepper(Stepper* stepper, OrientationPID* pid,  i
   m_bufferIndex = 0;
 }
 
+// double OrientationStepper::fakeVoltage() {
+//   return 1.5 * exp(-0.0001 * pow((m_rotation - m_fakeWindDir), 2));
+// }
+
 double OrientationStepper::fakeVoltage() {
-  return 1.5 * exp(-0.0001 * pow((m_rotation - m_fakeWindDir), 2));
+  return sin(m_rotation/57.3)/2.0;
 }
 
-
-void OrientationStepper::handleSteps() {
+void OrientationStepper::update(double volts) {
   if (m_state == CLOCKWISE_AUTO) {
     unsigned long now = millis();
     if (now - m_lastMove > 20) {
@@ -52,17 +55,27 @@ void OrientationStepper::handleSteps() {
       m_rotationHistory[m_bufferIndex] = m_rotation;
       m_bufferIndex++;
       m_stepper->step(calculateSteps(change));
+      Serial.print("Voltage: ");
+      Serial.print(voltage);
+      Serial.print(" change: ");
+      Serial.println(change);
     }
   } else if (m_state == PID) {
     unsigned long now = millis();
     //every 2s send an initialization request or turbine metrics to ESP8266
     if (now - m_lastMove > m_pidInterval) {
       m_lastMove = now;
-      double voltage = analogRead(A0) * 1.65 / 1023;
-       double change = m_pid->rotationChange(voltage);
+      double voltage = volts;
+      double change = m_pid->rotationChange(voltage);
       // Serial.println(change);
+      m_pidErrorHistory[m_bufferIndex] = change;
+      m_rotationHistory[m_bufferIndex] = m_rotation;
+      m_bufferIndex++;
       m_stepper->step(calculateSteps(change));
-      Serial.println(voltage);
+      Serial.print("Voltage: ");
+      Serial.print(voltage);
+      Serial.print(" change: ");
+      Serial.println(change);
     }
   } else if (m_state == CLOCKWISE_STEPS) {
     if (m_steps > 0) {
@@ -75,10 +88,6 @@ void OrientationStepper::handleSteps() {
       m_steps = 0;
     }
   }
-}
-
-void OrientationStepper::update() {
-  handleSteps();
 }
 
 StepperState OrientationStepper::getState() {
@@ -100,24 +109,28 @@ void OrientationStepper::addSteps(int steps) {
   m_steps += steps;
 }
 
-int OrientationStepper::calculateSteps(int degrees) {
+int OrientationStepper::calculateSteps(double degrees) {
   int steps = 0;
-  int old_rotation = m_rotation;
+  double old_rotation = m_rotation;
   // degrees = 50
   //If new rotation exceeds 360 degrees go the same position within 0-360 range
   if ((m_rotation + degrees) > 360) {
-    int overshoot = m_rotation + degrees - 360;  //e.g. degrees over 360
+    double overshoot = m_rotation + degrees - 360;  //e.g. degrees over 360
     m_rotation = overshoot;                      //rotation is the the same rotation as just the degrees over 360
     steps -= (old_rotation - overshoot) / 1.8;
     //If new rotation is less than 360 degrees go the  same position within 0-360 range
   } else if ((m_rotation + degrees) < 0) {
-    int overshoot = m_rotation + degrees;
+    double overshoot = m_rotation + degrees;
     m_rotation = 360 + overshoot;
     steps += (m_rotation - old_rotation) / 1.8;
     //Otherwise move normally
   } else {
     steps = degrees / 1.8;
     m_rotation = m_rotation + degrees;
+  }
+  if (steps == 0 && degrees > 0) {
+    m_rotation = m_rotation + 1.8;
+    return 1;
   }
   return steps;
 }
