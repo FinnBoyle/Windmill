@@ -13,9 +13,10 @@ type PIDTabProps = {
   interval: number;
   rotations: number[];
   errors: number[];
+  refresh: () => void;
 };
 const PIDTab: React.FC<PIDTabProps> = (props: PIDTabProps) => {
-  const { onFormSubmit, interval, rotations, errors } = props;
+  const { onFormSubmit, interval, rotations, errors, refresh } = props;
   return (
     <form onSubmit={(event) => onFormSubmit(event)}>
       <Grid>
@@ -27,7 +28,7 @@ const PIDTab: React.FC<PIDTabProps> = (props: PIDTabProps) => {
                 rotations={rotations}
                 errors={errors}
               />
-              <IconButton color="primary">
+              <IconButton color="primary" onClick={refresh}>
                 <RefreshIcon />
               </IconButton>
             </Box>

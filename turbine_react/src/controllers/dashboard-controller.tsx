@@ -14,6 +14,7 @@ const DashboardController = () => {
 
     fetchData().catch(console.error);
   };
+
   React.useEffect(() => {
     const fetchData = async () => {
       return getTurbines().then((turbines) => {

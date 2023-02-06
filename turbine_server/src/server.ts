@@ -54,6 +54,14 @@ client.on("message", function (topic, message) {
   } else if (topic == "PID_FEED") {
     let pidData: PIDData = JSON.parse(message.toString());
     console.log(message.toString());
-    latestPIDData[pidData.id] = pidData;
+
+    if (latestPIDData[pidData.id] == undefined) {
+      latestPIDData[pidData.id] = pidData;
+    } else if (latestPIDData[pidData.id].interval === pidData.interval) {
+      latestPIDData[pidData.id].errors.push(...pidData.errors);
+      latestPIDData[pidData.id].rotations.push(...pidData.rotations);
+    } else {
+      latestPIDData[pidData.id] = pidData;
+    }
   }
 });

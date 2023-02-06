@@ -15,12 +15,14 @@ type PIDTabState = {
   interval: number;
   rotations: number[];
   errors: number[];
+  timePeriod: number;
 };
 const PIDTabController: React.FC<PIDTabProps> = (props: PIDTabProps) => {
   const [state, setState] = React.useState<PIDTabState>({
     interval: 0,
     rotations: [],
     errors: [],
+    timePeriod: 2,
   });
   const onFormSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
@@ -34,6 +36,14 @@ const PIDTabController: React.FC<PIDTabProps> = (props: PIDTabProps) => {
     const kp = parseInt((form.kp as HTMLInputElement).value);
     const ki = parseInt((form.ki as HTMLInputElement).value);
     const kd = parseInt((form.kd as HTMLInputElement).value);
+    const seconds = parseInt((form.seconds as HTMLInputElement).value);
+
+    if (isNaN(kp) && isNaN(ki) && isNaN(kd)) {
+      setState({
+        ...state,
+        timePeriod: seconds,
+      });
+    }
 
     const fetchData = async () => {
       let settings: Settings = {
@@ -58,13 +68,38 @@ const PIDTabController: React.FC<PIDTabProps> = (props: PIDTabProps) => {
     fetchData().catch(console.error);
   };
 
+  const refreshPIDData = () => {
+    const fetchData = async () => {
+      return getPIDData().then((data: PIDData[]) => {
+        data.forEach((pidData: PIDData) => {
+          if (props.selected && props.selected.id === pidData.id) {
+            const { interval, rotations, errors } = pidData;
+            setState({
+              interval,
+              rotations,
+              errors,
+              timePeriod: state.timePeriod,
+            });
+          }
+        });
+      });
+    };
+
+    fetchData().catch(console.error);
+  };
+
   React.useEffect(() => {
     const fetchData = async () => {
       return getPIDData().then((data: PIDData[]) => {
         data.forEach((pidData: PIDData) => {
           if (props.selected && props.selected.id === pidData.id) {
             const { interval, rotations, errors } = pidData;
-            setState({ interval, rotations, errors });
+            setState({
+              interval,
+              rotations,
+              errors,
+              timePeriod: state.timePeriod,
+            });
           }
         });
       });
@@ -72,12 +107,24 @@ const PIDTabController: React.FC<PIDTabProps> = (props: PIDTabProps) => {
 
     fetchData().catch(console.error);
   }, []);
+
+  const onlyLastNSeconds = (array: number[]): number[] => {
+    const lastN = (state.timePeriod * 1000) / state.interval;
+
+    if (lastN > array.length) {
+      return array;
+    } else {
+      return array.slice(-lastN);
+    }
+  };
+
   return (
     <PIDTab
       onFormSubmit={onFormSubmit}
       interval={state.interval}
-      rotations={state.rotations}
-      errors={state.errors}
+      rotations={onlyLastNSeconds(state.rotations)}
+      errors={onlyLastNSeconds(state.errors)}
+      refresh={refreshPIDData}
     />
   );
 };
