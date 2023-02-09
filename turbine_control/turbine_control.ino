@@ -46,7 +46,8 @@ int freeRam() {
 }
 
 double getVoltage() {
-  return (analogRead(A0) * 5 / 1024.0) - 1.4;
+  double voltage = (analogRead(A0) * 5/1023.0);
+  return voltage;
 }
 void setup() {
   // analogReference(EXTERNAL);
@@ -72,10 +73,11 @@ void loop() {
       espSerial.write('\n');
 
     } else {
-      DynamicJsonDocument doc(100);
+      DynamicJsonDocument doc(150);
       doc["type"] = "METRICS";
       doc["voltage"] = volts;
       doc["memory"] = freeRam();
+      doc["rotation"] = orientationStepper->getRotation();
       serializeJson(doc, espSerial);
       espSerial.write('\n');
     }
@@ -124,8 +126,8 @@ void loop() {
         }
 
         if (orientationStepper == NULL) {
-          orientationPID = new OrientationPID(0.5, *kp, *ki, *kd);
-          orientationStepper = new OrientationStepper(&myStepper, orientationPID, 200, 20);
+          orientationPID = new OrientationPID(0.2, *kp, *ki, *kd, 0.05, 10);
+          orientationStepper = new OrientationStepper(&myStepper, orientationPID, 300, 20, 45);
           orientationStepper->setState(*state);
           Serial.println("INITIALIZED");
         } else {

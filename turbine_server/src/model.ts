@@ -4,6 +4,7 @@ type Metrics = {
   voltage: number;
   stepperState: number;
   rpm: number;
+  rotation: number;
   kp: number;
   ki: number;
   kd: number;

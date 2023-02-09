@@ -10,13 +10,13 @@
 SoftwareSerial arduinoSerial;
 // Update these with values suitable for your network.
 
-// const char* ssid = "SCMS_RESEARCH";
-// const char* password = "S0nny@AUT";
-// const char* mqtt_server = "172.16.24.115";
+const char* ssid = "SCMS_RESEARCH";
+const char* password = "S0nny@AUT";
+const char* mqtt_server = "172.16.24.115";
 
-const char* ssid = "2.4ghz";
-const char* password = "computer";
-const char* mqtt_server = "192.168.1.168";
+// const char* ssid = "2.4ghz";
+// const char* password = "computer";
+// const char* mqtt_server = "192.168.1.168";
 
 //temporary settings before file storage implemented
 //Default values
@@ -236,16 +236,17 @@ void loop() {
 
         //Serial.println(": " + String(bufferCopy));
 
-        DynamicJsonDocument turbineData(200);
+        DynamicJsonDocument turbineData(250);
         turbineData["id"] = ID;
         turbineData["memory"] = doc["memory"];
         turbineData["voltage"] = doc["voltage"];
         turbineData["stepperState"] = *stepperState;
         turbineData["rpm"] = *rpm;
+        turbineData["rotation"] = doc["rotation"];
         turbineData["kp"] = *kp;
         turbineData["ki"] = *ki;
         turbineData["kd"] = *kd;
-        char dataBuffer[200] = "";
+        char dataBuffer[250] = "";
 
         serializeJson(turbineData, dataBuffer);
         // Serial.println(dataBuffer);

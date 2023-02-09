@@ -16,7 +16,7 @@ private:
   OrientationPID* m_pid;
   Stepper* m_stepper;
   int m_rpm, m_steps, m_fakeWindDir, m_pidInterval, m_bufferSize;
-  double m_rotation;
+  double m_rotation, m_rotationTolerance;
   unsigned long m_lastMove = 0;
 
   //Buffers to supply historical rotation and PID error data to PID feed
@@ -26,7 +26,7 @@ private:
 
 
 public:
-  OrientationStepper(Stepper* stepper, OrientationPID* pid, int pidInterval, int bufferSize);
+  OrientationStepper(Stepper* stepper, OrientationPID* pid, int pidInterval, int bufferSize, double rotationTolerance);
   void update(double volts);
   StepperState getState();
   void setState(int state);
@@ -34,6 +34,7 @@ public:
   void addSteps(int steps);
   double fakeVoltage();
   int calculateSteps(double change);
+  double getRotation();
 
   //PID feed buffer functions
   void resetBuffers();

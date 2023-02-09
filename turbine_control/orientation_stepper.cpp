@@ -2,17 +2,17 @@
 #include <Arduino.h>
 #include <math.h>
 #define PI 3.14159265
-OrientationStepper::OrientationStepper(Stepper* stepper, OrientationPID* pid,  int pidInterval, int bufferSize) {
+OrientationStepper::OrientationStepper(Stepper* stepper, OrientationPID* pid,  int pidInterval, int bufferSize, double rotationTolerance) {
   m_stepper = stepper;
   m_pid = pid;
   m_state = OFF;
   m_steps = 0;
-  m_rpm = 100;
+  m_rpm = 20;
   m_fakeWindDir = 180;
-  m_rotation = 0;
+  m_rotation = 230;
   m_stepper->setSpeed(m_rpm);
   m_lastMove = 0;
-
+  m_rotationTolerance = rotationTolerance;
   m_pidInterval = pidInterval;
   m_bufferSize = bufferSize;
   m_pidErrorHistory = new float[m_bufferSize];
@@ -113,15 +113,15 @@ int OrientationStepper::calculateSteps(double degrees) {
   int steps = 0;
   double old_rotation = m_rotation;
   // degrees = 50
-  //If new rotation exceeds 360 degrees go the same position within 0-360 range
-  if ((m_rotation + degrees) > 360) {
+  //If new rotation exceeds  (360 + m_rotationTolerance) degrees go the same position within 0-(360 + m_rotationTolerance) range
+  if ((m_rotation + degrees) > (360 + m_rotationTolerance)) {
     double overshoot = m_rotation + degrees - 360;  //e.g. degrees over 360
     m_rotation = overshoot;                      //rotation is the the same rotation as just the degrees over 360
     steps -= (old_rotation - overshoot) / 1.8;
-    //If new rotation is less than 360 degrees go the  same position within 0-360 range
-  } else if ((m_rotation + degrees) < 0) {
+    //If new rotation is less than  (360 + m_rotationTolerance) degrees go the  same position within 0-(360 + m_rotationTolerance) range
+  } else if ((m_rotation + degrees) < (0 - m_rotationTolerance)) {
     double overshoot = m_rotation + degrees;
-    m_rotation = 360 + overshoot;
+    m_rotation =  360 + overshoot;
     steps += (m_rotation - old_rotation) / 1.8;
     //Otherwise move normally
   } else {
@@ -134,6 +134,10 @@ int OrientationStepper::calculateSteps(double degrees) {
   }
   return steps;
 }
+
+  double OrientationStepper::getRotation() {
+    return m_rotation;
+  }
 
  void OrientationStepper::resetBuffers() {
    m_bufferIndex = 0;
