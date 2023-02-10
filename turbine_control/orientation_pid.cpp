@@ -2,7 +2,7 @@
 #include <math.h>
 #include <Arduino.h>
 
-OrientationPID::OrientationPID(double setpoint, double kp, double ki, double kd, double reversalTheshold, int bufferSize)
+OrientationPID::OrientationPID(double setpoint, double kp, double ki, double kd, double reversalTheshold, int errorBufferSize, int movingAvgBufferSize)
   : m_pid(kp, ki, kd, PID::Direct) {
   // OrientationPID::OrientationPID(double setpoint, double kp, double ki, double kd) : m_pid(kp, ki, kd, PID::Direct) {
   m_setpoint = setpoint;
@@ -11,17 +11,20 @@ OrientationPID::OrientationPID(double setpoint, double kp, double ki, double kd,
   m_kd = kd;
   m_pid.Start(0, 0, setpoint);
   m_reversalTheshold = reversalTheshold;
+  m_reverse = false;  //Start going in a clockwise direction
 
   //buffer variables
-  m_bufferIndex = 0;
-  m_bufferLen = 0;
-  m_bufferSize = bufferSize;
-  m_errorBuffer = new double[m_bufferSize];
+  m_errorBufferIndex = 0;
+  m_errorBufferLen = 0;
+  m_errorBufferSize = errorBufferSize;
+  m_movingAvgBufferSize = movingAvgBufferSize;
+  m_errorBuffer = new double[m_errorBufferSize];
+  m_movingAvgBuffer = new double[m_movingAvgBufferSize];
 
   //moving avg calculations
   m_errorTotal = 0;
-  m_prevAvgError = 0; 
-  m_AvgError = 0;
+  m_avgError = 0;
+  m_AvgErrorGradient = 0;
 }
 
 
@@ -32,31 +35,62 @@ void OrientationPID::setConstants(double kp, double ki, double kd) {
   m_pid.SetTunings(kp, ki, kd);
 }
 
-void OrientationPID::calculateNextError(double error) {
-  double oldValue = m_errorBuffer[m_bufferIndex];
-  m_errorBuffer[m_bufferIndex] = error;
-  m_bufferIndex = (m_bufferIndex + 1) % m_bufferSize;
-  if (m_bufferLen < m_bufferSize - 1) {
-    m_bufferLen++;
+void OrientationPID::calculateAvgError(double currentError) {
+  double oldValue = m_errorBuffer[m_errorBufferIndex];
+  m_errorBuffer[m_errorBufferIndex] = currentError;
+  m_errorBufferIndex = (m_errorBufferIndex + 1) % m_errorBufferSize;
+  if (m_errorBufferLen < m_errorBufferSize) {
+    m_errorBufferLen++;
   }
 
   m_errorTotal -= oldValue;
-  m_errorTotal += error;
+  m_errorTotal += currentError;
 
-  m_prevAvgError = m_AvgError;
-  m_AvgError = m_errorTotal / m_bufferLen;
+  m_avgError = m_errorTotal / m_errorBufferLen;
+}
+//(f(x) - f(x+h))/h approximation
+// where f(x) is the oldest value in buffer, f(x+h) is the current value
+// and h is the buffer length (number of time steps known)
+void OrientationPID::calculateGradient() {
+  double oldValue = 0;
+  //if full take replaced value for f(x)
+  if (m_movingAvgBufferLen == m_movingAvgBufferSize) {
+    oldValue = m_movingAvgBuffer[m_movingAvgBufferIndex];
+   
+  } else {  //otherwise take index 0 for f(x)
+    oldValue = m_movingAvgBuffer[0];
+  }
+
+  m_movingAvgBuffer[m_movingAvgBufferIndex] = m_avgError;
+  m_movingAvgBufferIndex = (m_movingAvgBufferIndex + 1) % m_movingAvgBufferSize;
+
+  if (m_movingAvgBufferLen < m_movingAvgBufferSize) {
+    m_movingAvgBufferLen++;
+  }
+
+  //if only one value recorded return 0
+  if (m_movingAvgBufferLen < 2) {
+    m_AvgErrorGradient = 0;
+    
+  } else { //otherwise calculate gradient based off earliest known value
+    m_AvgErrorGradient = (oldValue - m_avgError) / m_movingAvgBufferLen;
+  }
 }
 
 double OrientationPID::rotationChange(double input) {
   double error = m_pid.Run(input);
-  this->calculateNextError(error);
+  this->calculateAvgError(error);
+  this->calculateGradient();
   Serial.print("Moving Avg Error: ");
-  Serial.println(m_AvgError);
-  //if error is increasing by more than the reversal theshold then change direction
-  if ((m_AvgError - m_prevAvgError) > m_reversalTheshold) {
-    Serial.println("Direction Change!");
+  Serial.print(m_avgError);
+  Serial.print("Gradient: ");
+  Serial.println(m_AvgErrorGradient);
 
+
+  //if error is increasing by more than the reversal theshold then change direction
+  if (m_AvgErrorGradient < 0) {
     m_reverse = !m_reverse;
+    Serial.println("REVERSED");
   }
   //If in reverse return error as a negative
   if (m_reverse) {

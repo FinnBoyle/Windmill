@@ -126,7 +126,7 @@ void loop() {
         }
 
         if (orientationStepper == NULL) {
-          orientationPID = new OrientationPID(0.2, *kp, *ki, *kd, 0.05, 10);
+          orientationPID = new OrientationPID(0.2, *kp, *ki, *kd, 0.05, 10, 5);
           orientationStepper = new OrientationStepper(&myStepper, orientationPID, 300, 20, 45);
           orientationStepper->setState(*state);
           Serial.println("INITIALIZED");

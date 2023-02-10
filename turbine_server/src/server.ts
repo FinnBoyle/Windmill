@@ -58,6 +58,12 @@ client.on("message", function (topic, message) {
     if (latestPIDData[pidData.id] == undefined) {
       latestPIDData[pidData.id] = pidData;
     } else if (latestPIDData[pidData.id].interval === pidData.interval) {
+      if (
+        !latestPIDData[pidData.id].errors ||
+        !latestPIDData[pidData.id].rotations
+      ) {
+        return;
+      }
       latestPIDData[pidData.id].errors.push(...pidData.errors);
       latestPIDData[pidData.id].rotations.push(...pidData.rotations);
     } else {
