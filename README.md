@@ -68,6 +68,7 @@ npm run {script}
 | Npm Script         | Description                                                         |
 | ------------------ | ------------------------------------------------------------------- |
 | `start`            | Run the React project               |
+| `dev`            | Start developer environment, code changes initiate restarts in real-time              |
 
 ## ReactJS Control Panel
 #### Install dependencies
@@ -75,10 +76,10 @@ npm run {script}
 cd turbine_react
 npm install i
 ```
-### NPM Run Scripts
+### React NPM Scripts
 
 ```
-npm run {script}
+npm {script}
 ```
 
 | Npm Script         | Description                                                         |
