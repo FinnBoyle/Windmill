@@ -6,8 +6,13 @@ import express, { Request, Response } from "express";
 import bodyParser, { json } from "body-parser";
 import cors from "cors";
 import { Metrics, PIDData, Settings } from "./model";
+import { Socket } from "socket.io/dist/socket";
+const { Server } = require("socket.io");
+const http = require("http");
 
 //init
+const server = http.createServer(express);
+const io = new Server(server);
 const app = express();
 app.use(bodyParser.json());
 app.use(
@@ -39,8 +44,6 @@ app.put("/settings", async (request: Request, response: Response) => {
   response.json(request.body);
 });
 
-app.listen(process.env.PORT);
-
 console.log(
   `Express server has started on port ${process.env.PORT}. Open http://localhost:${process.env.PORT}/ to see results`
 );
@@ -53,6 +56,7 @@ client.on("message", function (topic, message) {
     latestMetrics[metrics.id] = metrics;
   } else if (topic == "PID_FEED") {
     let pidData: PIDData = JSON.parse(message.toString());
+    io.emit("pidFeed", pidData);
     console.log(message.toString());
 
     if (latestPIDData[pidData.id] == undefined) {
@@ -71,3 +75,11 @@ client.on("message", function (topic, message) {
     }
   }
 });
+
+//Socket.io API
+io.on("connection", (socket: any) => {
+  console.log("New terminal connection: ", socket.id);
+});
+
+app.listen(process.env.PORT);
+server.listen(5001);

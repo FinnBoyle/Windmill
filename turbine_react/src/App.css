@@ -1,11 +1,14 @@
-/* Chrome, Safari, Edge, Opera */
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+.chartWrapper {
+  /* w w w. j a v  a2 s.co  m*/
+  position: relative;
 }
-
-/* Firefox */
-input[type="number"] {
-  -moz-appearance: textfield;
+.chartWrapper > canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+.chartAreaWrapper {
+  width: 600px;
+  overflow-x: scroll;
 }

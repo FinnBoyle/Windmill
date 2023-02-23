@@ -27,7 +27,6 @@ const DashboardTable: React.FC<DashboardTableProps> = (
             <TableCell>Stepper State</TableCell>
             <TableCell>RPM</TableCell>
             <TableCell>rotation</TableCell>
-
             <TableCell>Kp</TableCell>
             <TableCell>Ki</TableCell>
             <TableCell>Kd</TableCell>
@@ -44,13 +43,10 @@ const DashboardTable: React.FC<DashboardTableProps> = (
                   {turbine.id}
                 </TableCell>
                 <TableCell>{turbine.memory}</TableCell>
-
                 <TableCell>{turbine.voltage}</TableCell>
-
                 <TableCell>{turbine.stepperState}</TableCell>
                 <TableCell>{turbine.rpm}</TableCell>
                 <TableCell>{turbine.rotation}</TableCell>
-
                 <TableCell>{turbine.kp}</TableCell>
                 <TableCell>{turbine.ki}</TableCell>
                 <TableCell>{turbine.kd}</TableCell>

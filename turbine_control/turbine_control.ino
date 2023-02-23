@@ -124,10 +124,9 @@ void loop() {
         if (doc.containsKey("steps")) {
           *steps = doc["steps"];
         }
-
         if (orientationStepper == NULL) {
-          orientationPID = new OrientationPID(0.2, *kp, *ki, *kd, 0.05, 10, 5);
-          orientationStepper = new OrientationStepper(&myStepper, orientationPID, 300, 20, 45);
+          orientationPID = new OrientationPID(1.5, *kp, *ki, *kd, 5, 5);
+          orientationStepper = new OrientationStepper(&myStepper, orientationPID, 300, 5, 90);
           orientationStepper->setState(*state);
           Serial.println("INITIALIZED");
         } else {
@@ -149,22 +148,21 @@ void loop() {
     bool pidIntervalDone = (now - lastPIDSend) > orientationStepper->getInterval();
     if (orientationStepper->bufferFull() && pidIntervalDone) {
       lastPIDSend = now;
-      DynamicJsonDocument doc(300);
+      DynamicJsonDocument doc(150);
       doc["type"] = "PID";
       doc["interval"] = orientationStepper->getInterval();
 
-      int* rotationsArray = orientationStepper->getRotationHistory();
+      float* rotationsArray = orientationStepper->getRotationHistory();
       JsonArray rotations = doc.createNestedArray("rotations");
-      for (int i = 0; i < 11; i++) {
+      for (int i = 0; i < 5; i++) {
         rotations.add(rotationsArray[i]);
       }
 
       JsonArray errors = doc.createNestedArray("errors");
       float* errorsArray = orientationStepper->getErrorHistory();
-      for (int i = 0; i < 11; i++) {
+      for (int i = 0; i < 5; i++) {
         errors.add(errorsArray[i]);
       }
-
       serializeJson(doc, espSerial);
       espSerial.write('\n');
       orientationStepper->resetBuffers();

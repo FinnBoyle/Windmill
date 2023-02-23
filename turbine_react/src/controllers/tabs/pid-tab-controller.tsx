@@ -7,6 +7,11 @@ import {
   updateSettings,
 } from "../../models/turbine-model";
 import * as React from "react";
+import io from "socket.io-client";
+
+const socket = io("http://localhost:5001", {
+  transports: ["websocket", "polling", "flashsocket"],
+});
 
 type PIDTabProps = {
   selected: Turbine | undefined;
@@ -15,14 +20,13 @@ type PIDTabState = {
   interval: number;
   rotations: number[];
   errors: number[];
-  timePeriod: number;
 };
 const PIDTabController: React.FC<PIDTabProps> = (props: PIDTabProps) => {
+  const [isConnected, setIsConnected] = React.useState(socket.connected);
   const [state, setState] = React.useState<PIDTabState>({
     interval: 0,
     rotations: [],
     errors: [],
-    timePeriod: 2,
   });
   const onFormSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
@@ -36,14 +40,14 @@ const PIDTabController: React.FC<PIDTabProps> = (props: PIDTabProps) => {
     const kp = parseInt((form.kp as HTMLInputElement).value);
     const ki = parseInt((form.ki as HTMLInputElement).value);
     const kd = parseInt((form.kd as HTMLInputElement).value);
-    const seconds = parseInt((form.seconds as HTMLInputElement).value);
+    // const seconds = parseInt((form.seconds as HTMLInputElement).value);
 
-    if (isNaN(kp) && isNaN(ki) && isNaN(kd)) {
-      setState({
-        ...state,
-        timePeriod: seconds,
-      });
-    }
+    // if (isNaN(kp) && isNaN(ki) && isNaN(kd)) {
+    //   setState({
+    //     ...state,
+    //     timePeriod: seconds,
+    //   });
+    // }
 
     const fetchData = async () => {
       let settings: Settings = {
@@ -78,7 +82,6 @@ const PIDTabController: React.FC<PIDTabProps> = (props: PIDTabProps) => {
               interval,
               rotations,
               errors,
-              timePeriod: state.timePeriod,
             });
           }
         });
@@ -94,37 +97,83 @@ const PIDTabController: React.FC<PIDTabProps> = (props: PIDTabProps) => {
         data.forEach((pidData: PIDData) => {
           if (props.selected && props.selected.id === pidData.id) {
             const { interval, rotations, errors } = pidData;
-            setState({
-              interval,
-              rotations,
-              errors,
-              timePeriod: state.timePeriod,
-            });
+            if (pidData.errors.length > 200) {
+              setState({
+                interval,
+                rotations: rotations.slice(rotations.length - 201, undefined),
+                errors: errors.slice(errors.length - 201, undefined),
+              });
+            } else {
+              setState({
+                interval,
+                rotations,
+                errors,
+              });
+            }
           }
         });
       });
     };
 
     fetchData().catch(console.error);
+  });
+
+  React.useEffect(() => {
+    socket.on("connect", () => {
+      setIsConnected(true);
+    });
+
+    socket.on("disconnect", () => {
+      setIsConnected(false);
+    });
+
+    socket.on("pidFeed", (data: PIDData) => {
+      if (data.interval === state.interval) {
+        if (state.errors.length >= 200) {
+          //remove the oldest N items before pushing the new N items
+          state.errors = state.errors.slice(data.errors.length - 1, undefined);
+          state.rotations = state.rotations.slice(
+            data.rotations.length - 1,
+            undefined
+          );
+        }
+        state.errors.push(...data.errors);
+        state.rotations.push(...data.rotations);
+        console.log(state.errors);
+        setState({
+          interval: state.interval,
+          rotations: [...state.rotations, ...data.rotations],
+          errors: [...state.errors, ...data.errors],
+        });
+      } else {
+      }
+    });
+
+    return () => {
+      socket.off("connect");
+      socket.off("disconnect");
+      socket.off("pong");
+    };
   }, []);
 
-  const onlyLastNSeconds = (array: number[]): number[] => {
-    const lastN = (state.timePeriod * 1000) / state.interval;
+  // const onlyLastNSeconds = (array: number[]): number[] => {
+  //   const lastN = (state.timePeriod * 1000) / state.interval;
 
-    if (lastN > array.length) {
-      return array;
-    } else {
-      return array.slice(-lastN);
-    }
-  };
+  //   if (lastN > array.length) {
+  //     return array;
+  //   } else {
+  //     return array.slice(-lastN);
+  //   }
+  // };
 
   return (
     <PIDTab
       onFormSubmit={onFormSubmit}
       interval={state.interval}
-      rotations={onlyLastNSeconds(state.rotations)}
-      errors={onlyLastNSeconds(state.errors)}
+      rotations={state.rotations}
+      errors={state.errors}
       refresh={refreshPIDData}
+      connected={isConnected}
     />
   );
 };

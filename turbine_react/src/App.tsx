@@ -2,6 +2,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import WtTheme from "./theme";
 import DashboardController from "./controllers/dashboard-controller";
 import CssBaseline from "@mui/material/CssBaseline";
+import "./App.css";
 
 function App() {
   return (

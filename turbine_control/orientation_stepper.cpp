@@ -9,14 +9,14 @@ OrientationStepper::OrientationStepper(Stepper* stepper, OrientationPID* pid,  i
   m_steps = 0;
   m_rpm = 20;
   m_fakeWindDir = 180;
-  m_rotation = 230;
+  m_rotation = 0;
   m_stepper->setSpeed(m_rpm);
   m_lastMove = 0;
   m_rotationTolerance = rotationTolerance;
   m_pidInterval = pidInterval;
   m_bufferSize = bufferSize;
   m_pidErrorHistory = new float[m_bufferSize];
-  m_rotationHistory = new int[m_bufferSize];
+  m_rotationHistory = new float[m_bufferSize];
   m_bufferIndex = 0;
 }
 
@@ -26,6 +26,16 @@ OrientationStepper::OrientationStepper(Stepper* stepper, OrientationPID* pid,  i
 
 double OrientationStepper::fakeVoltage() {
   return sin(m_rotation/57.3)/2.0;
+}
+
+
+double normalRange(double rotation) {
+    double normalVal = fmod(rotation, 360);
+    if (normalVal < 0) {
+        normalVal += 360;
+    }
+    
+    return normalVal;
 }
 
 void OrientationStepper::update(double volts) {
@@ -49,16 +59,13 @@ void OrientationStepper::update(double volts) {
     if (now - m_lastMove > m_pidInterval) {
       m_lastMove = now;
       double voltage = fakeVoltage();
-      double change = m_pid->rotationChange(voltage);
+      double change = m_pid->compute(voltage,m_rotation);
       // Serial.println(change);
       m_pidErrorHistory[m_bufferIndex] = change;
-      m_rotationHistory[m_bufferIndex] = m_rotation;
+      //remove overflow from rotation threshold
+      m_rotationHistory[m_bufferIndex] = normalRange(m_rotation);
       m_bufferIndex++;
       m_stepper->step(calculateSteps(change));
-      Serial.print("Voltage: ");
-      Serial.print(voltage);
-      Serial.print(" change: ");
-      Serial.println(change);
     }
   } else if (m_state == PID) {
     unsigned long now = millis();
@@ -66,16 +73,13 @@ void OrientationStepper::update(double volts) {
     if (now - m_lastMove > m_pidInterval) {
       m_lastMove = now;
       double voltage = volts;
-      double change = m_pid->rotationChange(voltage);
+      double change = m_pid->compute(voltage,m_rotation);
       // Serial.println(change);
       m_pidErrorHistory[m_bufferIndex] = change;
-      m_rotationHistory[m_bufferIndex] = m_rotation;
+      //remove overflow from rotation threshold
+      m_rotationHistory[m_bufferIndex] = normalRange(m_rotation);
       m_bufferIndex++;
       m_stepper->step(calculateSteps(change));
-      Serial.print("Voltage: ");
-      Serial.print(voltage);
-      Serial.print(" change: ");
-      Serial.println(change);
     }
   } else if (m_state == CLOCKWISE_STEPS) {
     if (m_steps > 0) {
@@ -148,7 +152,7 @@ int OrientationStepper::calculateSteps(double degrees) {
   float* OrientationStepper::getErrorHistory() {
     return m_pidErrorHistory;
   }
-  int* OrientationStepper::getRotationHistory() {
+  float* OrientationStepper::getRotationHistory() {
     return m_rotationHistory;
   }
   int OrientationStepper::getInterval() {

@@ -21,7 +21,7 @@ private:
 
   //Buffers to supply historical rotation and PID error data to PID feed
   float* m_pidErrorHistory;
-  int* m_rotationHistory;
+  float* m_rotationHistory;
   int m_bufferIndex;
 
 
@@ -40,6 +40,6 @@ public:
   void resetBuffers();
   bool bufferFull();
   float* getErrorHistory();
-  int* getRotationHistory();
+  float* getRotationHistory();
   int getInterval();
 };

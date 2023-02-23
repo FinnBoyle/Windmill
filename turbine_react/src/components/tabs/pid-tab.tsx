@@ -14,27 +14,34 @@ type PIDTabProps = {
   rotations: number[];
   errors: number[];
   refresh: () => void;
+  connected: boolean;
 };
 const PIDTab: React.FC<PIDTabProps> = (props: PIDTabProps) => {
-  const { onFormSubmit, interval, rotations, errors, refresh } = props;
+  const { onFormSubmit, interval, rotations, errors, refresh, connected } =
+    props;
   return (
     <form onSubmit={(event) => onFormSubmit(event)}>
       <Grid>
         <Grid item xs={12}>
           <Box display="flex" justifyContent="center" alignItems="center">
-            <Box sx={{ width: "75%" }}>
+            <Box sx={{ width: "75%", overflow: "auto" }}>
               <DashboardPIDChart
                 interval={interval}
                 rotations={rotations}
                 errors={errors}
               />
-              <IconButton color="primary" onClick={refresh}>
+              {/* <IconButton color="primary" onClick={refresh}>
                 <RefreshIcon />
-              </IconButton>
+              </IconButton> */}
+              {connected ? (
+                <p>Connected to PID Feed</p>
+              ) : (
+                <p>Failed to connect to PID Feed</p>
+              )}
             </Box>
           </Box>
         </Grid>
-        <Grid item xs={12}>
+        {/* <Grid item xs={12}>
           <FormControl>
             <FormLabel>PID Graph Options</FormLabel>
             <FormGroup row sx={{ justifyContent: "space-around" }}>
@@ -48,7 +55,7 @@ const PIDTab: React.FC<PIDTabProps> = (props: PIDTabProps) => {
               />
             </FormGroup>
           </FormControl>
-        </Grid>
+        </Grid> */}
         <Grid item xs={12}>
           <FormControl>
             <FormLabel>PID Constants</FormLabel>

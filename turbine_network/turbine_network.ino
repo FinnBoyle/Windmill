@@ -16,12 +16,12 @@ SoftwareSerial arduinoSerial;
 
 const char* ssid = "2.4ghz";
 const char* password = "computer";
-const char* mqtt_server = "192.168.1.7";
+const char* mqtt_server = "192.168.1.10";
 
 //temporary settings before file storage implemented
 //Default values
 double dVoltage = 0;
-int dStepperState = 0, dRPM = 100, dSteps = 0, dkp = 0, dki = 0, dkd = 0;
+int dStepperState = 0, dRPM = 20, dSteps = 0, dkp = 0, dki = 0, dkd = 0;
 //settings pointers
 const char* ID = "T1";
 double* voltage = &dVoltage;
@@ -255,12 +255,12 @@ void loop() {
         updateControllerSettings();
       } else if (doc["type"] == "PID") {
         // Serial.println("GOT HERE!");
-        DynamicJsonDocument pidData(500);
+        DynamicJsonDocument pidData(300);
         pidData["id"] = ID;
         pidData["interval"] = doc["interval"];
         pidData["rotations"] = doc["rotations"];
         pidData["errors"] = doc["errors"];
-        char dataBuffer[500] = "";
+        char dataBuffer[300] = "";
 
         serializeJson(pidData, dataBuffer);
         Serial.println(bufferCopy);

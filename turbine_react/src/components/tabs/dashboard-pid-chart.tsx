@@ -1,4 +1,5 @@
 import { Line } from "react-chartjs-2";
+import { Box } from "@mui/material";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -9,6 +10,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+// import zoomPlugin from "chartjs-plugin-zoom";
 
 ChartJS.register(
   CategoryScale,
@@ -18,6 +20,7 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend
+  // zoomPlugin
 );
 ChartJS.defaults.color = "#FFFFFF";
 
@@ -36,25 +39,31 @@ const DashboardPIDChart: React.FC<PIDChartProps> = (props: PIDChartProps) => {
       {
         label: "Turbine Rotation",
         data: rotations,
-        borderWidth: 1,
+        borderWidth: 5,
         borderColor: "rgb(55,162,235)",
         backgroundColor: "rgb(53,162,235)",
         yAxisID: "y",
+        pointRadius: 0.1,
+        showLine: false,
       },
       {
         label: "PID Error",
         data: errors,
-        borderWidth: 1,
+        borderWidth: 5,
         borderColor: "rgb(255,114,111)",
         backgroundColor: "rgb(255,114,111)",
         yAxisID: "y1",
+        pointRadius: 0.1,
+        showLine: false,
       },
     ],
   };
 
   const options = {
     responsive: true,
-
+    animation: {
+      duration: 0,
+    },
     title: {
       display: true,
       text: "Turbine Rotation (°) vs Time (ms)",
@@ -64,6 +73,8 @@ const DashboardPIDChart: React.FC<PIDChartProps> = (props: PIDChartProps) => {
         type: "linear" as const,
         display: true,
         position: "left" as const,
+        min: 0,
+        max: 360,
       },
 
       y1: {
