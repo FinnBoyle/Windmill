@@ -21,6 +21,12 @@ enum StepperState {
   PID,
   CLOCKWISE_STEP,
   ANTI_CLOCKWISE_STEP,
+  MOVE_STEPS_AND_BACK, //used to implement chatgpt code
+  //testing temporary auto functions below, chatgpt or otherwise
+  AUTO_NO_HELP,
+  AUTO_FOUNDATIONS,
+  AUTO_FINISHINGS,
+  AUTO_FULL
 }
 
 const StepperTab: React.FC<StepperTabProps> = (props: StepperTabProps) => {

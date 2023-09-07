@@ -10,13 +10,10 @@
 SoftwareSerial arduinoSerial;
 // Update these with values suitable for your network.
 
-// const char* ssid = "SCMS_RESEARCH";
-// const char* password = "S0nny@AUT";
-// const char* mqtt_server = "172.16.24.115";
+const char* ssid = "SCMS_RESEARCH";
+const char* password = "S0nny@AUT";
+const char* mqtt_server = "172.16.24.139";
 
-const char* ssid = "2.4ghz";
-const char* password = "computer";
-const char* mqtt_server = "192.168.1.10";
 
 //temporary settings before file storage implemented
 //Default values
