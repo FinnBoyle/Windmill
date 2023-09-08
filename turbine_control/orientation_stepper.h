@@ -34,6 +34,11 @@ private:
   double maxVoltageRotation;
   int rotationCounter, rotationDegrees, rotationAmount;
   double rotationIncrement;
+
+  //AUTO_FOUNDATIONS
+  int currentRotation, optimalRotation;
+  double* recordedPower;
+  int currentIndex;
  
   //AUTO_FINISHINGS
   double* detectedVoltages;

@@ -32,6 +32,11 @@ OrientationStepper::OrientationStepper(Stepper* stepper, OrientationPID* pid,  i
   maxVoltageRotation = 0;
   rotationCounter = 0;
 
+  //used for AUTO_FOUNDATIONS
+  currentRotation = 0; //current rotation angle
+  optimalRotation = 0; //optimal rotation angle found
+  recordedPower = new double[9]; //recorded power at each step in the 360
+  currentIndex = 0; //to keep track of where to insert the next power value
 
   //used for AUTO_FINISHINGS
   detectedVoltages = new double[9];
@@ -172,7 +177,42 @@ void OrientationStepper::update(double volts) {
       rotationCounter = 0;
     }
   } else if (m_state == AUTO_FOUNDATIONS) { //begun by ChatGPT, finished by me
+    unsigned long now = millis();
 
+    if (currentRotation >= 360) {
+      //find optimal rotation angle after a 360
+      auto maxElementPtr = max_element(recordedPower, recordedPower + 9);
+      optimalRotation = distance(recordedPower, maxElementPtr) * 40; // 40 degree increment
+
+      //move to the optimal rotation
+      currentRotation = optimalRotation
+      m_stepper->step(calculateSteps(-currentRotation));
+      delay(5000);
+
+      //clear recorded data and reset current rotation to start the process again
+      for (int i = 0; i < 9; i++) {
+        recordedPower[i] = 0;
+      }
+      currentIndex = 0;
+      currentRotation = 0;
+    } else {
+      if (now - m_lastMove > 2000) {
+        //rotate the windmill by 40 degrees
+        m_stepper->step(calculateSteps(40));
+        currentRotation += 40;
+
+        // ensure rotation is within 0 and 360 degrees
+        if(currentRotation > 360) {
+          currentRotation -= 360; 
+        }
+
+        //record the power generation at this rotation angle
+        double voltage = volts;
+        if(currentIndex < 9) {
+          recordedPower[currentIndex++] = volts;
+        }
+      }
+    }
   } else if (m_state == AUTO_FINISHINGS) { //begun by me, finished by ChatGPT
     unsigned long now = millis();
     
