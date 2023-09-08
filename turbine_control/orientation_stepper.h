@@ -48,6 +48,12 @@ private:
   double rotationStep;
   int stepCount;
 
+  //AUTO_FULL
+  double bestRotation;
+  double maxVoltage;
+  double rotation_step;
+  double currRotation;
+
   //Buffers to supply historical rotation and PID error data to PID feed
   float* m_pidErrorHistory;
   float* m_rotationHistory;

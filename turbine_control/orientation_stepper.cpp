@@ -45,6 +45,12 @@ OrientationStepper::OrientationStepper(Stepper* stepper, OrientationPID* pid,  i
   maxRotation = 360.0;
   rotationStep = 40.0;
   stepCount = 0;
+
+  //AUTO_FULL
+  bestRotation = 0.0;
+  maxVoltage = -1.0;
+  rotation_step = 40.0;
+  currRotation = 0.0;
 }
 
 // double OrientationStepper::fakeVoltage() {
@@ -264,7 +270,32 @@ void OrientationStepper::update(double volts) {
       stepCount = 0;
       }
   } else if (m_state == AUTO_FULL) { //completely done by ChatGPT
-    
+    unsigned long now = millis();
+
+    if (currRotation < 360.0) {
+      if (now - m_lastMove > 2000) {
+        m_stepper->step(calculateSteps(rotation_step)); //40 degree steps
+
+        double voltage = volts;
+
+        if (voltage > maxVoltage) {
+          maxVoltage = voltage;
+          bestRotation = currRotation;
+        }
+
+        currRotation += rotation_step;
+        m_lastMove = now;
+      }
+    } else {
+      //once optimal rotation found, maintain it
+      m_stepper->step(calculateSteps(bestRotation));
+
+      delay(5000);
+
+      //reset variables
+      maxVoltage = -1.0;
+      currRotation = 0.0;
+    }
   }
 }
 
