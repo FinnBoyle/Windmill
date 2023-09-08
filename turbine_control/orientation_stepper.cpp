@@ -181,11 +181,19 @@ void OrientationStepper::update(double volts) {
 
     if (currentRotation >= 360) {
       //find optimal rotation angle after a 360
-      auto maxElementPtr = max_element(recordedPower, recordedPower + 9);
-      optimalRotation = distance(recordedPower, maxElementPtr) * 40; // 40 degree increment
+      double maxPower = recordedPower[0];
+      int maxIndex = 0;
+      for(int i = 0; i < 9; i++) {
+        if(recordedPower[i] > maxPower) {
+          maxPower = recordedPower[i];
+          maxIndex = i;
+        }
+      }
+
+      optimalRotation = maxIndex * 40; //40 degree increment
 
       //move to the optimal rotation
-      currentRotation = optimalRotation
+      currentRotation = optimalRotation;
       m_stepper->step(calculateSteps(-currentRotation));
       delay(5000);
 
