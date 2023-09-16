@@ -10,11 +10,18 @@ enum StepperState {
   CLOCKWISE_STEPS = 5,
   ANTI_CLOCKWISE_STEPS = 6,
 	MOVE_STEPS_AND_BACK = 7, //CHATGPT ADDITION
-  //auto function testing below
+  //"AUTO" function testing below
   AUTO_NO_HELP = 8,
   AUTO_FOUNDATIONS = 9,
   AUTO_FINISHINGS = 10,
-  AUTO_FULL = 11
+  AUTO_FULL = 11,
+  AUTO_CONCERT = 12,
+  //"AVOID" function testing below
+  AVOID_NO_HELP = 13,
+  AVOID_FOUNDATIONS = 14,
+  AVOID_FINISHINGS = 15,
+  AVOID_FULL = 16,
+  AVOID_CONCERT = 17
 };
 
 class OrientationStepper {

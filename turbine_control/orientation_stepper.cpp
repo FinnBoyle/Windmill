@@ -296,6 +296,18 @@ void OrientationStepper::update(double volts) {
       maxVoltage = -1.0;
       currRotation = 0.0;
     }
+  } else if (m_state == AUTO_CONCERT) {
+
+  } else if (m_state == AVOID_NO_HELP) {
+    
+  } else if (m_state == AVOID_FOUNDATIONS) {
+    
+  } else if (m_state == AVOID_FINISHINGS) {
+    
+  } else if (m_state == AVOID_FULL) {
+    
+  } else if (m_state == AVOID_CONCERT) {
+    
   }
 }
 

@@ -22,11 +22,18 @@ enum StepperState {
   CLOCKWISE_STEP,
   ANTI_CLOCKWISE_STEP,
   MOVE_STEPS_AND_BACK, //used to implement chatgpt code
-  //testing temporary auto functions below, chatgpt or otherwise
+  //testing auto functions below, chatgpt or otherwise
   AUTO_NO_HELP,
   AUTO_FOUNDATIONS,
   AUTO_FINISHINGS,
-  AUTO_FULL
+  AUTO_FULL,
+  AUTO_CONCERT,
+  //Testing the avoid function below
+  AVOID_NO_HELP,
+  AVOID_FOUNDATIONS,
+  AVOID_FINISHINGS,
+  AVOID_FULL,
+  AVOID_CONCERT
 }
 
 const StepperTab: React.FC<StepperTabProps> = (props: StepperTabProps) => {
