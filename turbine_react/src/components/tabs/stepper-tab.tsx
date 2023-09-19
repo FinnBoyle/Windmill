@@ -29,11 +29,11 @@ enum StepperState {
   AUTO_FULL,
   AUTO_CONCERT,
   //Testing the avoid function below
-  AVOID_NO_HELP,
-  AVOID_FOUNDATIONS,
-  AVOID_FINISHINGS,
-  AVOID_FULL,
-  AVOID_CONCERT
+  SEEK_NO_HELP,
+  SEEK_FOUNDATIONS,
+  SEEK_FINISHINGS,
+  SEEK_FULL,
+  SEEK_CONCERT
 }
 
 const StepperTab: React.FC<StepperTabProps> = (props: StepperTabProps) => {

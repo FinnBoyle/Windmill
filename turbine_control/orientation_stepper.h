@@ -16,12 +16,12 @@ enum StepperState {
   AUTO_FINISHINGS = 10,
   AUTO_FULL = 11,
   AUTO_CONCERT = 12,
-  //"AVOID" function testing below
-  AVOID_NO_HELP = 13,
-  AVOID_FOUNDATIONS = 14,
-  AVOID_FINISHINGS = 15,
-  AVOID_FULL = 16,
-  AVOID_CONCERT = 17
+  //"SEEK" function testing below
+  SEEK_NO_HELP = 13,
+  SEEK_FOUNDATIONS = 14,
+  SEEK_FINISHINGS = 15,
+  SEEK_FULL = 16,
+  SEEK_CONCERT = 17
 };
 
 class OrientationStepper {
@@ -60,6 +60,15 @@ private:
   double maxVoltage;
   double rotation_step;
   double currRotation;
+
+  //AUTO_CONCERT
+  double rotorAngle;
+  double rotorSteps;
+  double* voltageData;
+
+  //SEEK_NO_HELP
+  double stepAmount;
+  bool clockwise;
 
   //Buffers to supply historical rotation and PID error data to PID feed
   float* m_pidErrorHistory;

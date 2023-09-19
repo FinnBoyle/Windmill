@@ -51,6 +51,15 @@ OrientationStepper::OrientationStepper(Stepper* stepper, OrientationPID* pid,  i
   maxVoltage = -1.0;
   rotation_step = 40.0;
   currRotation = 0.0;
+
+  //AUTO_CONCERT
+  rotorAngle = 0.0;
+  rotorSteps = 40.0;
+  voltageData = new double[(int)(360.0/rotorSteps)];
+
+  //SEEK_NO_HELP
+  stepAmount = 0.0;
+  clockwise = true;
 }
 
 // double OrientationStepper::fakeVoltage() {
@@ -297,16 +306,66 @@ void OrientationStepper::update(double volts) {
       currRotation = 0.0;
     }
   } else if (m_state == AUTO_CONCERT) {
+    unsigned long now = millis();
 
-  } else if (m_state == AVOID_NO_HELP) {
+    if (now - m_lastMove > 2000) {
+      if (rotorAngle <= 360.0) {
+        double voltage = volts;
+        voltageData[(int)(rotorAngle / rotorSteps)] = volts;
+        rotorAngle += rotorSteps;
+
+        m_stepper->step(rotorSteps);
+      } else {
+        int maxValueRotation = 0;
+        double maxVolts = voltageData[0];
+        for (int i = 0; i < sizeof(voltageData); i++) {
+          if (voltageData[i] > maxVolts) {
+            maxVolts = voltageData[i];
+            maxValueRotation = i*rotorSteps;
+          }
+        }
+
+        m_stepper->step(-maxValueRotation);
+
+        delay(5000);
+
+        for(int i = 0; i < (sizeof(voltageData) / sizeof(voltageData[0])); i++) {
+          voltageData[i] = 0.0;
+        }
+        rotorAngle = 0.0;
+      }
+    }    
+  } else if (m_state == SEEK_NO_HELP) { // done by me
+    unsigned long now = millis();
+    double voltage = volts;
+
+    if (stepAmount >= 360.0) {
+      stepAmount -= 360.0;
+    }
+
+    if (now - m_lastMove > 200) {
+      if (voltage < 1.75) { //arbitrary voltage threshold
+        if (clockwise) {
+          m_stepper->step(stepAmount);
+          clockwise = false;
+        } else {
+          m_stepper->step(-stepAmount);
+          clockwise = true;
+        }
+        stepAmount += 5;
+      } else {
+        //strong wind source detected
+        stepAmount = 0.0;
+        delay(3000);
+      }
+    }
+  } else if (m_state == SEEK_FOUNDATIONS) { // started by chatgpt, finished by me
     
-  } else if (m_state == AVOID_FOUNDATIONS) {
+  } else if (m_state == SEEK_FINISHINGS) { // started by me, finished by chatgpt
     
-  } else if (m_state == AVOID_FINISHINGS) {
+  } else if (m_state == SEEK_FULL) { // done entirely by chatgpt
     
-  } else if (m_state == AVOID_FULL) {
-    
-  } else if (m_state == AVOID_CONCERT) {
+  } else if (m_state == SEEK_CONCERT) { // done by me, side by side with chatgpt
     
   }
 }
