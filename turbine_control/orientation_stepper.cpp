@@ -58,8 +58,21 @@ OrientationStepper::OrientationStepper(Stepper* stepper, OrientationPID* pid,  i
   voltageData = new double[(int)(360.0/rotorSteps)];
 
   //SEEK_NO_HELP
-  stepAmount = 0.0;
+  stepAmount = 5.0;
   clockwise = true;
+
+  //SEEK_FOUNDATIONS
+  foundMaxRotation = 180.0;
+  foundWindThreshold = 1.75;
+  foundRotationAmount = 5.0;
+  foundCurrentRotation = 0.0;
+  directionIsPositive = true;
+
+  //SEEK_FINISHINGS
+  stepSize = 10;
+  stepDirection = 1;
+  stepIncrement = 10;
+
 }
 
 // double OrientationStepper::fakeVoltage() {
@@ -355,14 +368,56 @@ void OrientationStepper::update(double volts) {
         stepAmount += 5;
       } else {
         //strong wind source detected
-        stepAmount = 0.0;
+        stepAmount = 5.0;
         delay(3000);
       }
     }
   } else if (m_state == SEEK_FOUNDATIONS) { // started by chatgpt, finished by me
-    
+    unsigned long now = millis();
+    double voltage = volts;
+
+    if (now - m_lastMove > 2000) {
+      if (voltage > foundWindThreshold) {
+        // reset variables
+        delay(3000);
+      } else {
+        if(directionIsPositive) {
+          foundCurrentRotation += foundRotationAmount;
+        } else {
+          foundCurrentRotation -= foundRotationAmount;
+        }
+
+        m_stepper->step(foundCurrentRotation);
+
+        if (currentRotation >= maxRotation) {
+          directionIsPositive = !directionIsPositive;
+          rotationAmount *= 2;
+          if(rotationAmount > maxRotation) {
+            rotationAmount = maxRotation;
+          }
+        }
+      }
+    }
   } else if (m_state == SEEK_FINISHINGS) { // started by me, finished by chatgpt
+    unsigned long now = millis();
+    double voltage = volts;
     
+    if (now - m_lastMove > 200) {
+      m_lastMove = now;
+      if (voltage < 1.75) {
+        m_stepper->step(stepSize * stepDirection);
+
+        //change direction and increment step amount
+        stepDirection *= -1;
+        stepSize += stepIncrement;
+      } else {
+        delay(3000);
+
+        // reset variables after finding strong wind
+        stepSize = 10;
+        stepDirection = 1;
+      }
+    }
   } else if (m_state == SEEK_FULL) { // done entirely by chatgpt
     
   } else if (m_state == SEEK_CONCERT) { // done by me, side by side with chatgpt

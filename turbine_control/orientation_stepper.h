@@ -70,6 +70,18 @@ private:
   double stepAmount;
   bool clockwise;
 
+  //SEEK_FOUNDATIONS
+  double foundMaxRotation;
+  double foundWindThreshold;
+  double foundRotationAmount;
+  double foundCurrentRotation;
+  bool directionIsPositive;
+
+  //SEEK_FINISHINGS
+  int stepSize;
+  int stepDirection;
+  int stepIncrement;
+
   //Buffers to supply historical rotation and PID error data to PID feed
   float* m_pidErrorHistory;
   float* m_rotationHistory;
