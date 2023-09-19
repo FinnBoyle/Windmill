@@ -82,6 +82,16 @@ private:
   int stepDirection;
   int stepIncrement;
 
+  //SEEK_FULL
+  double fullRotationAngle;
+  bool fullDirection;
+
+  //SEEK_CONCERT
+  double concertMaxStep;
+  double concertIncreaseFactor;
+  double concertCurrentStep;
+  bool concertRotateForward;
+
   //Buffers to supply historical rotation and PID error data to PID feed
   float* m_pidErrorHistory;
   float* m_rotationHistory;

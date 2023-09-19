@@ -73,6 +73,15 @@ OrientationStepper::OrientationStepper(Stepper* stepper, OrientationPID* pid,  i
   stepDirection = 1;
   stepIncrement = 10;
 
+  //SEEK_FULL
+  fullRotationAngle = 10.0;
+  fullDirection = true; // true == clockwise
+
+  //SEEK_CONCERT
+  concertMaxStep = 10;
+  concertIncreaseFactor = 5;
+  concertCurrentStep = 0;
+  concertRotateForward = true;
 }
 
 // double OrientationStepper::fakeVoltage() {
@@ -419,9 +428,43 @@ void OrientationStepper::update(double volts) {
       }
     }
   } else if (m_state == SEEK_FULL) { // done entirely by chatgpt
-    
+    unsigned long now = millis();
+    double voltage = volts;
+
+    if (now - m_lastMove > 200) {
+      if (voltage > 1.75) {
+        delay(3000);
+        fullRotationAngle = 10.0;
+        fullDirection = true;
+      } else {
+        m_stepper->step(fullDirection ? fullRotationAngle : -fullRotationAngle);
+        fullDirection = !fullDirection;
+        fullRotationAngle += 10.0;
+      }
+    }
   } else if (m_state == SEEK_CONCERT) { // done by me, side by side with chatgpt
-    
+    unsigned long now = millis();
+    double voltage = volts;
+
+    if(now - m_lastMove > 200) {
+      if (concertRotateForward) {
+        m_stepper->step(concertCurrentStep);
+        if (concertCurrentStep > concertMaxStep) {
+          concertRotateForward = false;
+          concertMaxStep += concertIncreaseFactor;
+        } else {
+          concertCurrentStep += concertIncreaseFactor;
+        }
+      } else {
+        m_stepper->step(-concertCurrentStep);
+        if (concertCurrentStep < -concertMaxStep) {
+          concertRotateForward = true;
+          concertMaxStep += concertIncreaseFactor;
+        } else {
+          concertCurrentStep -= concertIncreaseFactor;
+        }
+      }
+    }
   }
 }
 
