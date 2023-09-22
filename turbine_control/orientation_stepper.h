@@ -64,6 +64,7 @@ private:
   //AUTO_CONCERT
   double rotorAngle;
   double rotorSteps;
+  int concert_counter;
   double* voltageData;
 
   //SEEK_NO_HELP

@@ -54,7 +54,8 @@ OrientationStepper::OrientationStepper(Stepper* stepper, OrientationPID* pid,  i
 
   //AUTO_CONCERT
   rotorAngle = 0.0;
-  rotorSteps = 40.0;
+  rotorSteps = 120.0;
+  concert_counter = 0;
   voltageData = new double[(int)(360.0/rotorSteps)];
 
   //SEEK_NO_HELP
@@ -330,32 +331,34 @@ void OrientationStepper::update(double volts) {
   } else if (m_state == AUTO_CONCERT) {
     unsigned long now = millis();
 
-    if (now - m_lastMove > 2000) {
-      if (rotorAngle <= 360.0) {
+    if (rotorAngle < 360.0) {  
+      if (now - m_lastMove > 2000) {
+        m_lastMove = now;
         double voltage = volts;
-        voltageData[(int)(rotorAngle / rotorSteps)] = volts;
+
+        voltageData[concert_counter] = voltage;
         rotorAngle += rotorSteps;
-
+        concert_counter += 1;
+      
         m_stepper->step(rotorSteps);
-      } else {
-        int maxValueRotation = 0;
-        double maxVolts = voltageData[0];
-        for (int i = 0; i < sizeof(voltageData); i++) {
-          if (voltageData[i] > maxVolts) {
-            maxVolts = voltageData[i];
-            maxValueRotation = i*rotorSteps;
-          }
-        }
-
-        m_stepper->step(-maxValueRotation);
-
-        delay(5000);
-
-        for(int i = 0; i < (sizeof(voltageData) / sizeof(voltageData[0])); i++) {
-          voltageData[i] = 0.0;
-        }
-        rotorAngle = 0.0;
       }
+    } else if (rotorAngle >= 360.0) {
+      int maxValueRotation = 0;
+      double maxVolts = voltageData[0];
+      for (int i = 0; i < concert_counter; i++) {
+        if (voltageData[i] > maxVolts) {
+          maxVolts = voltageData[i];
+          maxValueRotation = i*rotorSteps;
+        }
+      }
+      m_stepper->step(-maxValueRotation);
+
+      delay(5000);
+
+      for(int i = 0; i < concert_counter; i++) {
+        voltageData[i] = 0.0;
+      }
+      rotorAngle = 0.0;
     }    
   } else if (m_state == SEEK_NO_HELP) { // done by me
     unsigned long now = millis();
@@ -365,8 +368,8 @@ void OrientationStepper::update(double volts) {
       stepAmount -= 360.0;
     }
 
-    if (now - m_lastMove > 200) {
-      if (voltage < 1.75) { //arbitrary voltage threshold
+    if (now - m_lastMove > 5000) {
+      if (voltage < 0.30) { //arbitrary voltage threshold
         if (clockwise) {
           m_stepper->step(stepAmount);
           clockwise = false;
