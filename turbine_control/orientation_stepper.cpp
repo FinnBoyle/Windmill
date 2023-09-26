@@ -63,26 +63,26 @@ OrientationStepper::OrientationStepper(Stepper* stepper, OrientationPID* pid,  i
   clockwise = true;
 
   //SEEK_FOUNDATIONS
-  foundMaxRotation = 180.0;
-  foundWindThreshold = 1.75;
-  foundRotationAmount = 5.0;
+  foundMaxRotation = 180.0; // in degrees
+  foundWindThreshold = 1.75; // some arbitrary value to detect strong wind
+  foundRotationAmount = 5.0; // initial rotation amount
   foundCurrentRotation = 0.0;
   directionIsPositive = true;
 
   //SEEK_FINISHINGS
-  stepSize = 10;
-  stepDirection = 1;
-  stepIncrement = 10;
+  stepSize = 10; // define the initial step size
+  stepDirection = 1; // define the initial direction (1 for forward, -1 for reverse)
+  stepIncrement = 10; // define step increment value
 
   //SEEK_FULL
-  fullRotationAngle = 10.0;
-  fullDirection = true; // true == clockwise
+  fullRotationAngle = 10.0; // starting angle
+  fullDirection = true; // true for clockwise, false for counter-clockwise
 
   //SEEK_CONCERT
-  concertMaxStep = 10;
-  concertIncreaseFactor = 5;
-  concertCurrentStep = 0;
-  concertRotateForward = true;
+  concertMaxStep = 10; // the maximum rotation step
+  concertIncreaseFactor = 5; // how much the step should increase after each full cycle (this value determines how quickly the oscillation goes)
+  concertCurrentStep = 0; // current rotation step value (starting step)
+  concertRotateForward = true; // direction of rotation (starting direction)
 }
 
 // double OrientationStepper::fakeVoltage() {
@@ -243,19 +243,16 @@ void OrientationStepper::update(double volts) {
       currentRotation = 0;
     } else {
       if (now - m_lastMove > 2000) {
+        m_lastMove = now;
         //rotate the windmill by 40 degrees
         m_stepper->step(calculateSteps(40));
         currentRotation += 40;
 
-        // ensure rotation is within 0 and 360 degrees
-        if(currentRotation > 360) {
-          currentRotation -= 360; 
-        }
-
         //record the power generation at this rotation angle
         double voltage = volts;
         if(currentIndex < 9) {
-          recordedPower[currentIndex++] = volts;
+          currentIndex++;
+          recordedPower[currentIndex] = volts;
         }
       }
     }
@@ -306,6 +303,7 @@ void OrientationStepper::update(double volts) {
 
     if (currRotation < 360.0) {
       if (now - m_lastMove > 2000) {
+        m_lastMove = now;
         m_stepper->step(calculateSteps(rotation_step)); //40 degree steps
 
         double voltage = volts;
@@ -316,17 +314,17 @@ void OrientationStepper::update(double volts) {
         }
 
         currRotation += rotation_step;
-        m_lastMove = now;
       }
     } else {
       //once optimal rotation found, maintain it
-      m_stepper->step(calculateSteps(bestRotation));
+      m_stepper->step(calculateSteps(-bestRotation));
 
       delay(5000);
 
       //reset variables
       maxVoltage = -1.0;
       currRotation = 0.0;
+      bestRotation = 0.0;
     }
   } else if (m_state == AUTO_CONCERT) {
     unsigned long now = millis();
@@ -344,7 +342,7 @@ void OrientationStepper::update(double volts) {
       }
     } else if (rotorAngle >= 360.0) {
       int maxValueRotation = 0;
-      double maxVolts = voltageData[0];
+      double maxVolts = voltageData[0]; //initialise with the first element
       for (int i = 0; i < concert_counter; i++) {
         if (voltageData[i] > maxVolts) {
           maxVolts = voltageData[i];
@@ -386,14 +384,14 @@ void OrientationStepper::update(double volts) {
     }
   } else if (m_state == SEEK_FOUNDATIONS) { // started by chatgpt, finished by me
     unsigned long now = millis();
-    double voltage = volts;
+    double voltage = volts; // get wind strength
 
     if (now - m_lastMove > 2000) {
-      if (voltage > foundWindThreshold) {
+      if (voltage > foundWindThreshold) { // if strong enough wind is detected
         // reset variables
         delay(3000);
       } else {
-        if(directionIsPositive) {
+        if(directionIsPositive) { // adjust rotation based on direction
           foundCurrentRotation += foundRotationAmount;
         } else {
           foundCurrentRotation -= foundRotationAmount;
@@ -401,9 +399,9 @@ void OrientationStepper::update(double volts) {
 
         m_stepper->step(foundCurrentRotation);
 
-        if (currentRotation >= maxRotation) {
+        if (currentRotation >= maxRotation) { // check bounds and update direction if necessary
           directionIsPositive = !directionIsPositive;
-          rotationAmount *= 2;
+          rotationAmount *= 2; // double the rotation amount
           if(rotationAmount > maxRotation) {
             rotationAmount = maxRotation;
           }
@@ -417,15 +415,17 @@ void OrientationStepper::update(double volts) {
     if (now - m_lastMove > 200) {
       m_lastMove = now;
       if (voltage < 1.75) {
+        // rotate the stepper
         m_stepper->step(stepSize * stepDirection);
 
-        //change direction and increment step amount
+        //change direction
         stepDirection *= -1;
+        // increase step size
         stepSize += stepIncrement;
       } else {
-        delay(3000);
+        delay(3000); // delay for 3 seconds
 
-        // reset variables after finding strong wind
+        // reset variables to their original state
         stepSize = 10;
         stepDirection = 1;
       }
@@ -435,12 +435,18 @@ void OrientationStepper::update(double volts) {
     double voltage = volts;
 
     if (now - m_lastMove > 200) {
+      // check wind voltage
       if (voltage > 1.75) {
         delay(3000);
+
+        // reset variables
         fullRotationAngle = 10.0;
         fullDirection = true;
       } else {
+        // rotate windmill
         m_stepper->step(fullDirection ? fullRotationAngle : -fullRotationAngle);
+
+        // toggle direction and increase rotation angle for next call
         fullDirection = !fullDirection;
         fullRotationAngle += 10.0;
       }
