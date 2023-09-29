@@ -57,14 +57,14 @@ OrientationStepper::OrientationStepper(Stepper* stepper, OrientationPID* pid,  i
   rotorSteps = 60.0;
   concert_counter = 0;
   voltageData = new double[int(360.0/rotorSteps)];
+  rotationData = new double[int(360.0/rotorSteps)];
 
   //SEEK_NO_HELP
   stepAmount = 5.0;
   clockwise = true;
 
   //SEEK_FOUNDATIONS
-  foundMaxRotation = 180.0; // in degrees
-  foundWindThreshold = 1.75; // some arbitrary value to detect strong wind
+  foundWindThreshold = 0.25; // some arbitrary value to detect strong wind
   foundRotationAmount = 5.0; // initial rotation amount
   foundCurrentRotation = 0.0;
   directionIsPositive = true;
@@ -79,10 +79,10 @@ OrientationStepper::OrientationStepper(Stepper* stepper, OrientationPID* pid,  i
   fullDirection = true; // true for clockwise, false for counter-clockwise
 
   //SEEK_CONCERT
-  concertMaxStep = 10; // the maximum rotation step
   concertIncreaseFactor = 5; // how much the step should increase after each full cycle (this value determines how quickly the oscillation goes)
   concertCurrentStep = 0; // current rotation step value (starting step)
   concertRotateForward = true; // direction of rotation (starting direction)
+  concertThreshold = 0.25;
 }
 
 // double OrientationStepper::fakeVoltage() {
@@ -329,37 +329,40 @@ void OrientationStepper::update(double volts) {
   } else if (m_state == AUTO_CONCERT) {
     unsigned long now = millis();
 
-    if (rotorAngle < 360.0) {  
-      if (now - m_lastMove > 2000) {
-        m_lastMove = now;
-        double voltage = volts;
-
-        m_stepper->step(rotorSteps);
-
-        voltageData[concert_counter] = voltage;
-        rotorAngle += rotorSteps;
-        concert_counter++;
-      }
-    } else {
-      double maxValueRotation = 0.0;
+    if (rotorAngle > 360.0) {  
       double maxVolts = voltageData[0]; //initialise with the first element
-      double counter = 0.0;
+      double appropriateRotation = rotationData[0];
       for (int i = 0; i < concert_counter; i++) {
         if (voltageData[i] > maxVolts) {
           maxVolts = voltageData[i];
-          maxValueRotation = counter*rotorSteps;
+          appropriateRotation = rotationData[i];
         }
-        counter++;
       }
-      m_stepper->step(-maxValueRotation);
+      m_stepper->step(-appropriateRotation);
 
       delay(5000);
 
       for(int i = 0; i <= int(360.0/rotorSteps); i++) {
         voltageData[i] = 0.0;
+        rotationData[i] = 0.0;
       }
       rotorAngle = 0.0;
       concert_counter = 0;
+    
+    } else {
+      if (now - m_lastMove > 2000) {
+        m_lastMove = now;
+
+        double voltage = volts;
+
+        m_stepper->step(calculateSteps(rotorSteps));
+
+        voltageData[concert_counter] = voltage;
+        rotationData[concert_counter] = rotorAngle;
+        concert_counter++;
+
+        rotorAngle += rotorSteps;
+      }
     }    
   } else if (m_state == SEEK_NO_HELP) { // done by me
     unsigned long now = millis();
@@ -369,9 +372,9 @@ void OrientationStepper::update(double volts) {
       stepAmount -= 360.0;
     }
 
-    if (now - m_lastMove > 2000) {
+    if (now - m_lastMove > 200) {
       m_lastMove = now;
-      if (voltage < 0.30) { //arbitrary voltage threshold
+      if (voltage < 0.25) { //arbitrary voltage threshold
         if (clockwise) {
           m_stepper->step(stepAmount);
           clockwise = false;
@@ -390,26 +393,20 @@ void OrientationStepper::update(double volts) {
     unsigned long now = millis();
     double voltage = volts; // get wind strength
 
-    if (now - m_lastMove > 2000) {
+    if (now - m_lastMove > 200) {
       if (voltage > foundWindThreshold) { // if strong enough wind is detected
         // reset variables
+        foundCurrentRotation = 0.0;
         delay(3000);
       } else {
-        if(directionIsPositive) { // adjust rotation based on direction
-          foundCurrentRotation += foundRotationAmount;
+        if (directionIsPositive) {
+          m_stepper->step(foundCurrentRotation);
         } else {
-          foundCurrentRotation -= foundRotationAmount;
+          m_stepper->step(-foundCurrentRotation);
         }
 
-        m_stepper->step(foundCurrentRotation);
-
-        if (currentRotation >= maxRotation) { // check bounds and update direction if necessary
-          directionIsPositive = !directionIsPositive;
-          rotationAmount *= 2; // double the rotation amount
-          if(rotationAmount > maxRotation) {
-            rotationAmount = maxRotation;
-          }
-        }
+        foundCurrentRotation += foundRotationAmount;
+        directionIsPositive = !directionIsPositive;
       }
     }
   } else if (m_state == SEEK_FINISHINGS) { // started by me, finished by chatgpt
@@ -418,7 +415,7 @@ void OrientationStepper::update(double volts) {
     
     if (now - m_lastMove > 200) {
       m_lastMove = now;
-      if (voltage < 1.75) {
+      if (voltage < 0.25) {
         // rotate the stepper
         m_stepper->step(stepSize * stepDirection);
 
@@ -440,7 +437,7 @@ void OrientationStepper::update(double volts) {
 
     if (now - m_lastMove > 200) {
       // check wind voltage
-      if (voltage > 1.75) {
+      if (voltage > 0.25) {
         delay(3000);
 
         // reset variables
@@ -460,21 +457,19 @@ void OrientationStepper::update(double volts) {
     double voltage = volts;
 
     if(now - m_lastMove > 200) {
-      if (concertRotateForward) {
-        m_stepper->step(concertCurrentStep);
-        if (concertCurrentStep > concertMaxStep) {
-          concertRotateForward = false;
-          concertMaxStep += concertIncreaseFactor;
-        } else {
-          concertCurrentStep += concertIncreaseFactor;
-        }
+      if (voltage > concertThreshold) {
+        concertCurrentStep = 0.0;
+
+        delay(5000);
       } else {
-        m_stepper->step(-concertCurrentStep);
-        if (concertCurrentStep < -concertMaxStep) {
-          concertRotateForward = true;
-          concertMaxStep += concertIncreaseFactor;
+        if (concertRotateForward) {
+          m_stepper->step(concertCurrentStep);
+          concertCurrentStep += concertIncreaseFactor;
+          concertRotateForward = false;
         } else {
-          concertCurrentStep -= concertIncreaseFactor;
+          m_stepper->step(-concertCurrentStep);
+          concertCurrentStep += concertIncreaseFactor;
+          concertRotateForward = true;
         }
       }
     }

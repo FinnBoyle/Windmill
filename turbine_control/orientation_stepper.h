@@ -62,17 +62,17 @@ private:
   double currRotation;
 
   //AUTO_CONCERT
-  double rotorAngle;
+  float rotorAngle;
   double rotorSteps;
   int concert_counter;
   double* voltageData;
+  double* rotationData;
 
   //SEEK_NO_HELP
   double stepAmount;
   bool clockwise;
 
   //SEEK_FOUNDATIONS
-  double foundMaxRotation;
   double foundWindThreshold;
   double foundRotationAmount;
   double foundCurrentRotation;
@@ -88,10 +88,10 @@ private:
   bool fullDirection;
 
   //SEEK_CONCERT
-  double concertMaxStep;
   double concertIncreaseFactor;
   double concertCurrentStep;
   bool concertRotateForward;
+  double concertThreshold;
 
   //Buffers to supply historical rotation and PID error data to PID feed
   float* m_pidErrorHistory;
